@@ -65,6 +65,21 @@
                                            (car (gethash :children
                                                          (car (org-structure "* ignored\n** I'm a child!")))))))
 
+(ert-deftest second-child-block ()
+  (should (org-structure/hash-tables-equal #s(hash-table data (:text "I'm the younger, forgotten child."
+                                                                     :children nil))
+                                           (elt (gethash :children
+                                                         (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
+                                                1))))
+
+(ert-deftest thirdly-nested-block ()
+  (should (equal 2
+                 (length (gethash :children
+                                  (elt (gethash :children
+                                                (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                     1))
+                                       1))))))
+
 ;;;; get-blocks tests
 
 (ert-deftest get-blocks-one-block ()
