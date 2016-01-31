@@ -33,7 +33,7 @@
   (org-structure/parse text 1))
 
 (defun org-structure/parse (text level)
-  "Take TEXT -- which is at nesting level LEVEL -- and return the org-structure.
+  "Return the org-structure of TEXT, a bunch of blocks of nesting level LEVEL.
 
 This returns a list of blocks."
   (mapcar (lambda (text-block)
@@ -41,23 +41,15 @@ This returns a list of blocks."
           (org-structure/get-blocks text level)))
 
 (defun org-structure/parse-block (text-block level)
-  "Parse the TEXT-BLOCK, assuming it's at level LEVEL.
+  "Parse the TEXT-BLOCK -- a single block -- which is at level LEVEL.
 
-This returns a single block."
+Return a single block."
   (let ((table (make-hash-table))
         (end-of-text (search "\n" text-block)))
     (puthash :text (substring text-block 0 end-of-text) table)
     (puthash :children
              (if end-of-text
-                 (mapcar (lambda (child) ;;too many lists in result. Why?
-                           (org-structure/parse child level)
-                           ;; (let ((child-table (make-hash-table)))
-                           ;;   (puthash :text child child-table)
-                           ;;   child-table)
-                           )
-                         (split-string (substring text-block end-of-text)
-                                       "\n"
-                                       t))
+                 (org-structure/parse (substring text-block end-of-text) level)
                nil)
              table)
     table))
