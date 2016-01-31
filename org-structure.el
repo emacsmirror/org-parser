@@ -72,9 +72,7 @@ For example:
 * back to first
 
 would have two blocks at nesting level one; the first block having two lines, and the second: one."
-  (let ((asterisks-string (apply #'concat
-                                 (make-list level
-                                            "\\*"))))
+  (let ((asterisks-string (format "\\*\\{%s\\}" level)))
     (split-string text
                   (format "\n%s "
                           asterisks-string)
