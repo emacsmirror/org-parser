@@ -6,9 +6,6 @@
 
 (defun org-structure/hash-tables-equal (table1 table2)
   "Return t if TABLE1 and TABLE2 are equal, nil if they arent'."
-  (message (format "first table has size %s; second %s"
-                   (hash-table-count table1)
-                   (hash-table-count table2)))
   (and (= (hash-table-count table1)
           (hash-table-count table2))
        (every (lambda (key)
