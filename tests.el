@@ -46,6 +46,11 @@
                                                                      :children nil))
                                            (car (org-structure "* header")))))
 
+(ert-deftest newlines-at-eof-are-ok ()
+  (should (org-structure/hash-tables-equal #s(hash-table data (:text "header"
+                                                                     :children nil))
+                                           (elt (org-structure "* header\n") 0))))
+
 (ert-deftest children-dont-create-new-block ()
   (should (equal 1
                  (length (org-structure "* header\n** nested")))))
@@ -96,6 +101,11 @@
 (ert-deftest get-blocks-one-block ()
   (should (equal '("just one block")
                  (org-structure/get-blocks "* just one block"
+                                           1))))
+
+(ert-deftest get-blocks-newline-at-eof-is-ok ()
+  (should (equal '("just one block")
+                 (org-structure/get-blocks "* just one block\n"
                                            1))))
 
 (ert-deftest get-blocks-two-block ()

@@ -48,7 +48,9 @@ Return a single block."
         (end-of-text (search "\n" text-block)))
     (puthash :text (substring text-block 0 end-of-text) table)
     (puthash :children
-             (if end-of-text
+             (if (and end-of-text
+                      (< (1+ end-of-text)
+                         (length text-block)))
                  (org-structure/parse (substring text-block end-of-text) level)
                nil)
              table)
@@ -69,7 +71,7 @@ would have two blocks at nesting level one; the first block having two lines, an
                   (format "\n%s "
                           asterisks-string)
                   t
-                  (format "^%s "
+                  (format "\\(^%s \\|\n\\)"
                           asterisks-string))))
 
 ;;; org-structure.el ends here
