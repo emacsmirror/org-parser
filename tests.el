@@ -34,6 +34,22 @@
   (should (org-structure/hash-tables-equal #s(hash-table data (1 2 4 5))
                                            #s(hash-table data (1 2 4 5)))))
 
+(ert-deftest subset/empty-tables-are-subset ()
+  (should (org-structure/hash-table-subset (make-hash-table)
+                                           (make-hash-table))))
+
+(ert-deftest subset/empty-table-subset-of-table-with-data ()
+  (should (org-structure/hash-table-subset (make-hash-table)
+                                           #s(hash-table data (1 2 3 4)))))
+
+(ert-deftest subset/equal-tables-are-subsets ()
+  (should (org-structure/hash-table-subset #s(hash-table data (1 2 3 4))
+                                           #s(hash-table data (1 2 3 4)))))
+
+(ert-deftest subset/simple-subset ()
+  (should (org-structure/hash-table-subset #s(hash-table data (1 2))
+                                           #s(hash-table data (1 2 3 4)))))
+
 
 ;;;; org structure tests
 

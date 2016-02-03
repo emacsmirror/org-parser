@@ -13,6 +13,13 @@
                        (gethash key table2)))
               (hash-table-keys table1))))
 
+(defun org-structure/hash-table-subset (subset superset)
+  "Return t if every (key, value) pair in SUBSET is also in SUPERSET."
+  (every (lambda (key)
+           (equal (gethash key superset)
+                  (gethash key subset)))
+         (hash-table-keys subset)))
+
 
 (defun org-structure-buffer (buffer)
   "Return the org structure of BUFFER."
