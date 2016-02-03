@@ -41,7 +41,7 @@
 
 This returns a list of blocks."
   (mapcar (lambda (text-block)
-            (org-structure/parse-block text-block (1+ level)))
+            (org-structure/parse-block text-block level))
           (org-structure/get-blocks text level)))
 
 (defun org-structure/parse-block (text-block level)
@@ -55,9 +55,10 @@ Return a single block."
              (if (and end-of-text
                       (< (1+ end-of-text)
                          (length text-block)))
-                 (org-structure/parse (substring text-block end-of-text) level)
+                 (org-structure/parse (substring text-block end-of-text) (1+ level))
                nil)
              table)
+    (puthash :level level table)
     table))
 
 (defun org-structure/get-blocks (text level)

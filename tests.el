@@ -59,12 +59,14 @@
 
 (ert-deftest single-line-should-be-ok ()
   (should (org-structure/hash-tables-equal #s(hash-table data (:text "header"
-                                                                     :children nil))
+                                                                     :children nil
+                                                                     :level 1))
                                            (car (org-structure "* header")))))
 
 (ert-deftest newlines-at-eof-are-ok ()
   (should (org-structure/hash-tables-equal #s(hash-table data (:text "header"
-                                                                     :children nil))
+                                                                     :children nil
+                                                                     :level 1))
                                            (elt (org-structure "* header\n") 0))))
 
 (ert-deftest children-dont-create-new-block ()
@@ -82,13 +84,15 @@
 
 (ert-deftest child-block ()
   (should (org-structure/hash-tables-equal #s(hash-table data (:text "I'm a child!"
-                                                                     :children nil))
+                                                                     :children nil
+                                                                     :level 2))
                                            (car (gethash :children
                                                          (car (org-structure "* ignored\n** I'm a child!")))))))
 
 (ert-deftest second-child-block ()
   (should (org-structure/hash-tables-equal #s(hash-table data (:text "I'm the younger, forgotten child."
-                                                                     :children nil))
+                                                                     :children nil
+                                                                     :level 2))
                                            (elt (gethash :children
                                                          (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
                                                 1))))
@@ -103,7 +107,7 @@
 
 (ert-deftest thirdly-nested-block ()
   (should (org-structure/hash-tables-equal
-           #s(hash-table data (:text "this is the other test grandchild." :children nil))
+           #s(hash-table data (:text "this is the other test grandchild." :children nil :level 3))
            (elt (gethash :children
                          (elt (gethash :children
                                        (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
