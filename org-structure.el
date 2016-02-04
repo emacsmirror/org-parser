@@ -79,4 +79,21 @@ would have two blocks at nesting level one; the first block having two lines, an
                   (format "\\(^%s \\|\n\\)"
                           asterisks-string))))
 
+(defun org-structure/to-string (structure-list)
+  "Convert STRUCTURE-LIST, a list of structure hash tables, to a string.
+
+This should be identical to the org file parsed to create the structure."
+  (string-join (mapcar #'org-structure/single-to-string
+                       structure-list)))
+
+(defun org-structure/single-to-string (structure)
+  "Convert STRUCTURE, a single structure hash table, to a string.
+
+This should be identical to the org file parsed to create the structure."
+  (format "%s %s\n%s"
+          (make-string (gethash :level structure)
+                       ?*)
+          (gethash :text structure)
+          (org-structure/to-string (gethash :children structure))))
+
 ;;; org-structure.el ends here

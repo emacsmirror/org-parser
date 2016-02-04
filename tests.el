@@ -153,4 +153,35 @@
                  (org-structure/get-blocks "** first block\n*** nested\n**** way nested\n** second block"
                                            2))))
 
+
+;;;; to-string tests
+
+(ert-deftest to-string/just-one-block ()
+  (should (equal "* header\n"
+                 (org-structure/to-string '(#s(hash-table data (:text "header"
+                                                                      :children nil
+                                                                      :level 1)))))))
+
+;;;; tests that go from a string to a structure to a string
+(ert-deftest to-structure-to-string/just-one-block ()
+  (should (equal "* header\n"
+                 (org-structure/to-string (org-structure "* header\n")))))
+
+(ert-deftest to-structure-to-string/simply-nested ()
+  (should (equal "* header\n** nested\n"
+                 (org-structure/to-string (org-structure "* header\n** nested\n")))))
+
+(ert-deftest to-structure-to-string/two-children ()
+  (should (equal "* header\n** first child\n** second child\n"
+                 (org-structure/to-string (org-structure "* header\n** first child\n** second child\n")))))
+
+(ert-deftest to-structure-to-string/two-blocks ()
+  (should (equal "* header\n* second\n"
+                 (org-structure/to-string (org-structure "* header\n* second\n")))))
+
+(ert-deftest to-structure-to-string/three-levels ()
+  (should (equal "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n"
+                 (org-structure/to-string (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n")))))
+
+
 ;;; tests.el ends here
