@@ -57,17 +57,36 @@
   (should (equal 1
                  (length (org-structure "* header")))))
 
-(ert-deftest single-line-should-be-ok ()
-  (should (org-structure/hash-tables-equal #s(hash-table data (:text "header"
-                                                                     :children nil
-                                                                     :level 1))
-                                           (car (org-structure "* header")))))
+(ert-deftest single-line-text ()
+  (should (equal "header"
+                 (gethash :text (car (org-structure "* header"))))))
 
-(ert-deftest newlines-at-eof-are-ok ()
-  (should (org-structure/hash-tables-equal #s(hash-table data (:text "header"
-                                                                     :children nil
-                                                                     :level 1))
-                                           (elt (org-structure "* header\n") 0))))
+(ert-deftest single-line-children ()
+  (should-not (gethash :children (car (org-structure "* header")))))
+
+(ert-deftest single-line-level ()
+  (should (equal 1
+                 (gethash :level (car (org-structure "* header"))))))
+
+(ert-deftest single-line-bullet ()
+  (should (equal ?*
+                 (gethash :bullet (car (org-structure "* header"))))))
+
+(ert-deftest with-newline-single-line-text ()
+  (should (equal "header"
+                 (gethash :text (car (org-structure "* header\n"))))))
+
+(ert-deftest with-newline-single-line-children ()
+  (should-not (gethash :children (car (org-structure "* header\n")))))
+
+(ert-deftest with-newline-single-line-level ()
+  (should (equal 1
+                 (gethash :level (car (org-structure "* header\n"))))))
+
+(ert-deftest with-newline-single-line-bullet ()
+  (should (equal ?*
+                 (gethash :bullet (car (org-structure "* header\n"))))))
+
 
 (ert-deftest children-dont-create-new-block ()
   (should (equal 1
@@ -82,20 +101,44 @@
   (should (equal 2
                  (length (org-structure "* header\n* nested")))))
 
-(ert-deftest child-block ()
-  (should (org-structure/hash-tables-equal #s(hash-table data (:text "I'm a child!"
-                                                                     :children nil
-                                                                     :level 2))
-                                           (car (gethash :children
-                                                         (car (org-structure "* ignored\n** I'm a child!")))))))
 
-(ert-deftest second-child-block ()
-  (should (org-structure/hash-tables-equal #s(hash-table data (:text "I'm the younger, forgotten child."
-                                                                     :children nil
-                                                                     :level 2))
-                                           (elt (gethash :children
-                                                         (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
-                                                1))))
+
+(ert-deftest child-block-single-line-text ()
+  (should (equal "I'm a child!"
+                 (gethash :text (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+
+(ert-deftest child-block-single-line-children ()
+  (should-not (gethash :children (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0))))))
+
+(ert-deftest child-block-single-line-level ()
+  (should (equal 2
+                 (gethash :level (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+
+(ert-deftest child-block-single-line-bullet ()
+  (should (equal ?*
+                 (gethash :bullet (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+
+
+(ert-deftest second-child-block-single-line-text ()
+  (should (equal "I'm the younger, forgotten child."
+                 (gethash :text (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
+                                     1)))))
+
+(ert-deftest second-child-block-single-line-children ()
+  (should-not (gethash :children (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
+                                      1))))
+
+(ert-deftest second-child-block-single-line-level ()
+  (should (equal 2
+                 (gethash :level (elt (gethash :children (elt (org-structure"* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
+                                      1)))))
+
+(ert-deftest second-child-block-single-line-bullet ()
+  (should (equal ?*
+                 (gethash :bullet (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
+                                       1)))))
+
+
 
 (ert-deftest thirdly-nested-child-blocks ()
   (should (equal 2
@@ -105,15 +148,45 @@
                                                      1))
                                        1))))))
 
-(ert-deftest thirdly-nested-block ()
-  (should (org-structure/hash-tables-equal
-           #s(hash-table data (:text "this is the other test grandchild." :children nil :level 3))
-           (elt (gethash :children
-                         (elt (gethash :children
-                                       (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                            1))
-                              1))
-                1))))
+
+(ert-deftest third-nested-child-block-single-line-text ()
+  (should (equal "this is the other test grandchild."
+                 (gethash :text
+                          (elt (gethash :children
+                                        (elt (gethash :children
+                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                           1))
+                                             1))
+                               1)))))
+
+(ert-deftest third-nested-child-block-single-line-children ()
+  (should-not (gethash :children
+                       (elt (gethash :children
+                                        (elt (gethash :children
+                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                           1))
+                                             1))
+                               1))))
+
+(ert-deftest third-nested-child-block-single-line-level ()
+  (should (equal 3
+                 (gethash :level
+                          (elt (gethash :children
+                                        (elt (gethash :children
+                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                           1))
+                                             1))
+                               1)))))
+
+(ert-deftest third-nested-child-block-single-line-bullet ()
+  (should (equal ?*
+                 (gethash :bullet
+                          (elt (gethash :children
+                                        (elt (gethash :children
+                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                           1))
+                                             1))
+                               1)))))
 
 
 ;;;; get-blocks tests
@@ -160,7 +233,8 @@
   (should (equal "* header\n"
                  (org-structure/to-string '(#s(hash-table data (:text "header"
                                                                       :children nil
-                                                                      :level 1)))))))
+                                                                      :level 1
+                                                                      :bullet ?*)))))))
 
 ;;;; tests that go from a string to a structure to a string
 (ert-deftest to-structure-to-string/just-one-block ()

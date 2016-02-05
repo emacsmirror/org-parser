@@ -41,11 +41,11 @@
 
 This returns a list of blocks."
   (mapcar (lambda (text-block)
-            (org-structure/parse-block text-block level))
+            (org-structure/parse-block text-block ?* level))
           (org-structure/get-blocks text level)))
 
-(defun org-structure/parse-block (text-block level)
-  "Parse the TEXT-BLOCK -- a single block -- which is at level LEVEL.
+(defun org-structure/parse-block (text-block current-bullet level)
+  "Parse TEXT-BLOCK -- a single block with CURRENT-BULLET at level LEVEL.
 
 Return a single block."
   (let ((table (make-hash-table))
@@ -59,6 +59,7 @@ Return a single block."
                nil)
              table)
     (puthash :level level table)
+    (puthash :bullet current-bullet table)
     table))
 
 (defun org-structure/get-blocks (text level)
