@@ -93,7 +93,7 @@ This should be identical to the org file parsed to create the structure."
 This should be identical to the org file parsed to create the structure."
   (format "%s %s\n%s"
           (make-string (gethash :level structure)
-                       ?*)
+                       (gethash :bullet structure))
           (gethash :text structure)
           (org-structure/to-string (gethash :children structure))))
 
