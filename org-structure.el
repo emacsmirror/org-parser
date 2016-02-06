@@ -97,4 +97,12 @@ This should be identical to the org file parsed to create the structure."
           (gethash :text structure)
           (org-structure/to-string (gethash :children structure))))
 
+(defun org-structure/get-nested-children (structure children-indices)
+  "Get children recursively from STRUCTURE; at each level, take the nth child, where n is the next element in CHILDREN-INDICES."
+  (if (not children-indices)
+      structure
+    (org-structure/get-nested-children (elt (gethash :children structure)
+                                            (first children-indices))
+                                       (rest children-indices))))
+
 ;;; org-structure.el ends here
