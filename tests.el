@@ -259,26 +259,25 @@
 
 
 (ert-deftest nested-children/no-indices ()
-  (should (org-structure/hash-tables-equal #s(hash-table data (:children nil :text "whatever"))
-                                           (org-structure/get-nested-children #s(hash-table data (:children 'children :text "whatever"))
-                                                                              nil))))
+  (should (org-structure/hash-tables-equal #s(hash-table data (:children 'children :text "whatever"))
+                                           (org-structure/get-nested-children #s(hash-table data (:children 'children :text "whatever"))))))
 
 (ert-deftest nested-children/single-index ()
   (should (equal 3
                  (org-structure/get-nested-children #s(hash-table data (:children (2 3 4)))
-                                                    '(1)))))
+                                                    1))))
 
 (ert-deftest nested-children/missing-index ()
   (should-not (org-structure/get-nested-children #s(hash-table data (:children (2 3 4)))
-                                                 '(14))))
+                                                 14)))
 
 (ert-deftest nested-children/too-many-indices ()
   (should-not (org-structure/get-nested-children #s(hash-table data (:children (2 #s(hash-table data (:children nil :text "whatever")) 4)))
-                                                 '(1 1))))
+                                                 1 1)))
 
 (ert-deftest nested-children/two-indices ()
   (should (equal :im-nested
                  (org-structure/get-nested-children #s(hash-table data (:children (2 #s(hash-table data (:children (0 1 :im-nested))))))
-                                                    '(1 2)))))
+                                                    1 2))))
 
 ;;; tests.el ends here
