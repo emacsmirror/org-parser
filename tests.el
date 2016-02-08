@@ -226,6 +226,31 @@
                  (org-structure/get-blocks "** first block\n*** nested\n**** way nested\n** second block"
                                            2))))
 
+(ert-deftest get-bullet/one-level-headline ()
+  (should (equal "* "
+                 (org-structure/get-bullet "* headline\n"))))
+
+(ert-deftest get-bullet/two-level-headline ()
+  (should (equal "** "
+                 (org-structure/get-bullet "** headline\n"))))
+
+(ert-deftest get-bullet/three-level-headline ()
+  (should (equal "*** "
+                 (org-structure/get-bullet "*** headline\n"))))
+
+(ert-deftest get-bullet/looks-at-first-line ()
+  (should (equal "** "
+                 (org-structure/get-bullet "** headline\n*** second thing\n"))))
+
+(ert-deftest get-bullet/string-with-initial-space-fails ()
+  (should-error (org-structure/get-bullet " ** not matching!")))
+
+(ert-deftest get-bullet/string-with-no-endingspace-fails ()
+  (should-error (org-structure/get-bullet "**not matching!")))
+
+(ert-deftest get-bullet/string-with-no-bullets-fails ()
+  (should-error (org-structure/get-bullet "not matching!")))
+
 
 ;;;; to-string tests
 

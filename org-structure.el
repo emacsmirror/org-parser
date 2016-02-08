@@ -106,4 +106,12 @@ This should be identical to the org file parsed to create the structure."
                 (first children-indices))
            (rest children-indices))))
 
+(defun org-structure/get-bullet (text)
+  "Get the bullet form from TEXT, including the space after.
+
+If TEXT does not start with a bullet form, this will error."
+  (if (string-match "^\\(\\*+ \\)" text)
+      (match-string 1 text)
+    (error "Error calling org-structure/get-bullet on a string that doesn't have bullets")))
+
 ;;; org-structure.el ends here
