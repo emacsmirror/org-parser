@@ -242,14 +242,54 @@
   (should (equal "** "
                  (org-structure/get-bullet "** headline\n*** second thing\n"))))
 
-(ert-deftest get-bullet/string-with-initial-space-fails ()
+(ert-deftest get-bullet/headline-with-initial-space-fails ()
   (should-error (org-structure/get-bullet " ** not matching!")))
 
-(ert-deftest get-bullet/string-with-no-endingspace-fails ()
+(ert-deftest get-bullet/headline-with-no-endingspace-fails ()
   (should-error (org-structure/get-bullet "**not matching!")))
 
-(ert-deftest get-bullet/string-with-no-bullets-fails ()
+(ert-deftest get-bullet/headline-with-no-bullets-fails ()
   (should-error (org-structure/get-bullet "not matching!")))
+
+(ert-deftest get-bullet/plain-list-simple ()
+  (should (equal "- "
+                 (org-structure/get-bullet "- asrt\n"))))
+
+(ert-deftest get-bullet/plain-list-single-nested ()
+  (should (equal "  - "
+                 (org-structure/get-bullet "  - asrt\n"))))
+
+(ert-deftest get-bullet/plain-list-doubly-nested ()
+  (should (equal "    - "
+                 (org-structure/get-bullet "    - asrt\n"))))
+
+(ert-deftest get-bullet/plain-list-nested-plus ()
+  (should (equal "  + "
+                 (org-structure/get-bullet "  + asrt\n"))))
+
+(ert-deftest get-bullet/ordered-list-period ()
+  (should (equal "1. "
+                 (org-structure/get-bullet "1. what"))))
+
+(ert-deftest get-bullet/ordered-list-period ()
+  (should (equal "4) "
+                 (org-structure/get-bullet "4) what"))))
+
+(ert-deftest get-bullet/ordered-list-nested-period ()
+  (should (equal "  2. "
+                 (org-structure/get-bullet "  2. what"))))
+
+(ert-deftest get-bullet/ordered-list-nested-paren ()
+  (should (equal "  1) "
+                 (org-structure/get-bullet "  1) what"))))
+
+(ert-deftest get-bullet/ordered-list-two-digits ()
+    (should (equal "  42) "
+                 (org-structure/get-bullet "  42) what"))))
+
+(ert-deftest get-bullet/plain-list-dash-after-ordered-list ()
+  (should (equal "   - "
+                 (org-structure/get-bullet "   - the /parent/ of this node is an ordered list, so there are *three* spaces"))))
 
 
 ;;;; to-string tests
