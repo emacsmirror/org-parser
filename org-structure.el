@@ -49,8 +49,12 @@ This returns a list of blocks."
 
 Return a single block."
   (let ((table (make-hash-table))
-        (end-of-text (search "\n" text-block)))
-    (puthash :text (substring text-block 0 end-of-text) table)
+        (end-of-text (search "\n" text-block))
+        (full-bullet (org-structure/get-bullet text-block)))
+    (puthash :text (substring text-block
+                              (length full-bullet)
+                              end-of-text)
+             table)
     (puthash :children
              (if (and end-of-text
                       (< (1+ end-of-text)
@@ -72,13 +76,13 @@ For example:
 * back to first
 
 would have two blocks at nesting level one; the first block having two lines, and the second: one."
-  (let ((asterisks-string (format "\\*\\{%s\\}" level)))
-    (split-string text
-                  (format "\n%s "
-                          asterisks-string)
-                  t
-                  (format "\\(^%s \\|\n\\)"
-                          asterisks-string))))
+  (let ((bullet (org-structure/get-bullet text)))
+    (mapcar (lambda (block-without-substring)
+              (format "%s%s" bullet block-without-substring))
+         (split-string text
+                       (regexp-quote (format "\n%s" bullet))
+                       t
+                       (format "\\(%s\\|\n\\)" (regexp-quote bullet))))))
 
 (defun org-structure/to-string (structure-list)
   "Convert STRUCTURE-LIST, a list of structure hash tables, to a string.

@@ -192,37 +192,37 @@
 ;;;; get-blocks tests
 
 (ert-deftest get-blocks-one-block ()
-  (should (equal '("just one block")
+  (should (equal '("* just one block")
                  (org-structure/get-blocks "* just one block"
                                            1))))
 
 (ert-deftest get-blocks-newline-at-eof-is-ok ()
-  (should (equal '("just one block")
+  (should (equal '("* just one block")
                  (org-structure/get-blocks "* just one block\n"
                                            1))))
 
 (ert-deftest get-blocks-two-block ()
-  (should (equal '("first block" "second block")
+  (should (equal '("* first block" "* second block")
                  (org-structure/get-blocks "* first block\n* second block"
                                            1))))
 
 (ert-deftest get-blocks-keeps-children ()
-  (should (equal '("first block\n** nested" "second block")
+  (should (equal '("* first block\n** nested" "* second block")
                  (org-structure/get-blocks "* first block\n** nested\n* second block"
                                            1))))
 
 (ert-deftest get-blocks-second-level ()
-  (should (equal '("first block" "second block")
+  (should (equal '("** first block" "** second block")
                  (org-structure/get-blocks "** first block\n** second block"
                                            2))))
 
 (ert-deftest get-blocks-second-level-keeps-children ()
-  (should (equal '("first block\n*** nested" "second block")
+  (should (equal '("** first block\n*** nested" "** second block")
                  (org-structure/get-blocks "** first block\n*** nested\n** second block"
                                            2))))
 
 (ert-deftest get-blocks-ignores-way-nested-children ()
-  (should (equal '("first block\n*** nested\n**** way nested" "second block")
+  (should (equal '("** first block\n*** nested\n**** way nested" "** second block")
                  (org-structure/get-blocks "** first block\n*** nested\n**** way nested\n** second block"
                                            2))))
 
