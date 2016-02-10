@@ -63,7 +63,7 @@ Return a single block."
                nil)
              table)
     (puthash :level level table)
-    (puthash :bullet (org-structure/bullet-type full-bullet) table)
+    (puthash :bullet-type (org-structure/bullet-type full-bullet) table)
     table))
 
 (defun org-structure/bullet-type (full-bullet)
@@ -110,7 +110,7 @@ This should be identical to the org file parsed to create the structure."
 This should be identical to the org file parsed to create the structure."
   (format "%s %s\n%s"
           (make-string (gethash :level structure)
-                       (gethash :bullet structure))
+                       (gethash :bullet-type structure))
           (gethash :text structure)
           (org-structure/to-string (gethash :children structure))))
 
