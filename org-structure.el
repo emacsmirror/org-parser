@@ -41,10 +41,10 @@
 
 This returns a list of blocks."
   (mapcar (lambda (text-block)
-            (org-structure/parse-block text-block ?* level))
+            (org-structure/parse-block text-block level))
           (org-structure/get-blocks text level)))
 
-(defun org-structure/parse-block (text-block current-bullet level)
+(defun org-structure/parse-block (text-block level)
   "Parse TEXT-BLOCK -- a single block with CURRENT-BULLET at level LEVEL.
 
 Return a single block."
@@ -63,8 +63,21 @@ Return a single block."
                nil)
              table)
     (puthash :level level table)
-    (puthash :bullet current-bullet table)
+    (puthash :bullet (org-structure/bullet-type full-bullet) table)
     table))
+
+(defun org-structure/bullet-type (full-bullet)
+  "Return the bullet-type of FULL-BULLET.
+
+For example, \"** \" has a bullet type of ?*.
+Plain lists are the leading symbol (+ or -).
+Ordered lists are ?#"
+  (cond ((string-match "^\\*+ " full-bullet)
+         ?*)
+        ((string-match "^\s*\\([+-]\\) " full-bullet)
+         (elt (match-string 1 full-bullet) 0))
+        ((string-match "^\s*[[:digit:]]+\\([.)]\\) " full-bullet)
+         (elt (match-string 1 full-bullet) 0))))
 
 (defun org-structure/get-blocks (text level)
   "Get the blocks for TEXT, at nesting level LEVEL.

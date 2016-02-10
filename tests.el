@@ -72,6 +72,41 @@
   (should (equal ?*
                  (gethash :bullet (car (org-structure "* header"))))))
 
+(ert-deftest single-plain-list-has-only-one-block ()
+  (should (equal 1
+                 (length (org-structure "- header")))))
+
+(ert-deftest single-plain-list-text ()
+  (should (equal "header"
+                 (gethash :text (car (org-structure "- header"))))))
+
+(ert-deftest single-plain-list-children ()
+  (should-not (gethash :children (car (org-structure "- header")))))
+
+(ert-deftest single-plain-list-level ()
+  (should (equal 1
+                 (gethash :level (car (org-structure "- header"))))))
+
+(ert-deftest single-plain-list-bullet ()
+  (should (equal ?-
+                 (gethash :bullet (car (org-structure "- header"))))))
+
+(ert-deftest nested-headline-bullet ()
+  (should (equal ?*
+                 (gethash :bullet (car (org-structure "** header"))))))
+
+(ert-deftest nested-plain-list-bullet ()
+  (should (equal ?+
+                 (gethash :bullet (car (org-structure "   + header"))))))
+
+(ert-deftest ordered-list-bullet ()
+  (should (equal ?.
+                 (gethash :bullet (car (org-structure "14. header"))))))
+
+(ert-deftest nested-ordered-list-bullet ()
+  (should (equal ?.
+                 (gethash :bullet (car (org-structure "  3. header"))))))
+
 (ert-deftest with-newline-single-line-text ()
   (should (equal "header"
                  (gethash :text (car (org-structure "* header\n"))))))
@@ -344,5 +379,41 @@
   (should (equal :im-nested
                  (org-structure/get-nested-children #s(hash-table data (:children (2 #s(hash-table data (:children (0 1 :im-nested))))))
                                                     1 2))))
+
+(ert-deftest bullet-type-headline ()
+  (should (equal ?*
+                 (org-structure/bullet-type "* "))))
+
+(ert-deftest bullet-type-nested-headline ()
+  (should (equal ?*
+                 (org-structure/bullet-type "** "))))
+
+(ert-deftest bullet-type-plain-list-dash ()
+  (should (equal ?-
+                 (org-structure/bullet-type "- "))))
+
+(ert-deftest bullet-type-plain-list-nested-dash ()
+  (should (equal ?-
+                 (org-structure/bullet-type "  - "))))
+
+(ert-deftest bullet-type-plain-list-nested-plus ()
+  (should (equal ?+
+                 (org-structure/bullet-type "     + "))))
+
+(ert-deftest bullet-type-plain-list-number-paren ()
+  (should (equal ?\)
+                 (org-structure/bullet-type "14) "))))
+
+(ert-deftest bullet-type-plain-list-number-period ()
+  (should (equal ?.
+                 (org-structure/bullet-type "3. "))))
+
+(ert-deftest bullet-type-plain-list-number-nested-paren ()
+  (should (equal ?\)
+                 (org-structure/bullet-type "  14) "))))
+
+(ert-deftest bullet-type-plain-list-number-nested-period ()
+  (should (equal ?.
+                 (org-structure/bullet-type "     3. "))))
 
 ;;; tests.el ends here
