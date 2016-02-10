@@ -140,88 +140,83 @@
 
 (ert-deftest child-block-single-line-text ()
   (should (equal "I'm a child!"
-                 (gethash :text (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+                 (gethash :text (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
+                                                                   0)))))
 
 (ert-deftest child-block-single-line-children ()
-  (should-not (gethash :children (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0))))))
+  (should-not (gethash :children (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
+                                                                    0))))
 
 (ert-deftest child-block-single-line-level ()
   (should (equal 2
-                 (gethash :level (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+                 (gethash :level (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
+                                                                    0)))))
 
 (ert-deftest child-block-single-line-bullet ()
   (should (equal ?*
-                 (gethash :bullet-type (car (gethash :children (elt (org-structure "* ignored\n** I'm a child!") 0)))))))
+                 (gethash :bullet-type (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
+                                                                          0)))))
 
 
 (ert-deftest second-child-block-single-line-text ()
   (should (equal "I'm the younger, forgotten child."
-                 (gethash :text (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
-                                     1)))))
+                 (gethash :text (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                                                                   1)))))
 
 (ert-deftest second-child-block-single-line-children ()
-  (should-not (gethash :children (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
-                                      1))))
+  (should-not (gethash :children (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                                                                    1))))
 
 (ert-deftest second-child-block-single-line-level ()
   (should (equal 2
-                 (gethash :level (elt (gethash :children (elt (org-structure"* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
-                                      1)))))
+                 (gethash :level (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                                                                    1)))))
 
 (ert-deftest second-child-block-single-line-bullet ()
   (should (equal ?*
-                 (gethash :bullet-type (elt (gethash :children (elt (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.") 0))
-                                            1)))))
+                 (gethash :bullet-type (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                                                                    1)))))
 
 
 
 (ert-deftest thirdly-nested-child-blocks ()
   (should (equal 2
                  (length (gethash :children
-                                  (elt (gethash :children
-                                                (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                                     1))
-                                       1))))))
+                                  (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                                          1)
+                                                                     1))))))
 
 
 (ert-deftest third-nested-child-block-single-line-text ()
   (should (equal "this is the other test grandchild."
                  (gethash :text
-                          (elt (gethash :children
-                                        (elt (gethash :children
-                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                                           1))
-                                             1))
-                               1)))))
+                          (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                                  1)
+                                                             1
+                                                             1)))))
 
 (ert-deftest third-nested-child-block-single-line-children ()
   (should-not (gethash :children
-                       (elt (gethash :children
-                                     (elt (gethash :children
-                                                   (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                                        1))
-                                          1))
-                            1))))
+                       (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                               1)
+                                                          1
+                                                          1))))
 
 (ert-deftest third-nested-child-block-single-line-level ()
   (should (equal 3
                  (gethash :level
-                          (elt (gethash :children
-                                        (elt (gethash :children
-                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                                           1))
-                                             1))
-                               1)))))
+                          (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                                  1)
+                                                             1
+                                                             1)))))
 
 (ert-deftest third-nested-child-block-single-line-bullet ()
   (should (equal ?*
                  (gethash :bullet-type
-                          (elt (gethash :children
-                                        (elt (gethash :children
-                                                      (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
-                                                           1))
-                                             1))
-                               1)))))
+                          (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                                  1)
+                                                             1
+                                                             1)))))
 
 
 ;;;; get-blocks tests
