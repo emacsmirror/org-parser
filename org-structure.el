@@ -45,7 +45,7 @@ This returns a list of blocks."
           (org-structure/get-blocks text level)))
 
 (defun org-structure/parse-block (text-block level)
-  "Parse TEXT-BLOCK -- a single block with CURRENT-BULLET at level LEVEL.
+  "Parse TEXT-BLOCK -- a single block at level LEVEL.
 
 Return a single block."
   (let ((table (make-hash-table))
