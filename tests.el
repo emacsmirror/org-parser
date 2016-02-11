@@ -68,9 +68,13 @@
   (should (equal 1
                  (gethash :level (car (org-structure "* header"))))))
 
-(ert-deftest single-line-bullet ()
+(ert-deftest single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (car (org-structure "* header"))))))
+
+(ert-deftest single-line-bullet ()
+  (should (equal "* "
+                 (gethash :bullet (car (org-structure "* header"))))))
 
 (ert-deftest single-plain-list-has-only-one-block ()
   (should (equal 1
@@ -87,25 +91,45 @@
   (should (equal 1
                  (gethash :level (car (org-structure "- header"))))))
 
-(ert-deftest single-plain-list-bullet ()
+(ert-deftest single-plain-list-bullet-type ()
   (should (equal ?-
                  (gethash :bullet-type (car (org-structure "- header"))))))
 
-(ert-deftest nested-headline-bullet ()
+(ert-deftest single-plain-list-bullet ()
+  (should (equal "- "
+                 (gethash :bullet (car (org-structure "- header"))))))
+
+(ert-deftest nested-headline-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (car (org-structure "** header"))))))
 
-(ert-deftest nested-plain-list-bullet ()
+(ert-deftest nested-headline-bullet ()
+  (should (equal "** "
+                 (gethash :bullet (car (org-structure "** header"))))))
+
+(ert-deftest nested-plain-list-bullet-type ()
   (should (equal ?+
                  (gethash :bullet-type (car (org-structure "   + header"))))))
 
-(ert-deftest ordered-list-bullet ()
+(ert-deftest nested-plain-list-bullet ()
+  (should (equal "   + "
+                 (gethash :bullet (car (org-structure "   + header"))))))
+
+(ert-deftest ordered-list-bullet-type ()
   (should (equal ?.
                  (gethash :bullet-type (car (org-structure "14. header"))))))
 
-(ert-deftest nested-ordered-list-bullet ()
+(ert-deftest ordered-list-bullet ()
+  (should (equal "14. "
+                 (gethash :bullet (car (org-structure "14. header"))))))
+
+(ert-deftest nested-ordered-list-bullet-type ()
   (should (equal ?.
                  (gethash :bullet-type (car (org-structure "  3. header"))))))
+
+(ert-deftest nested-ordered-list-bullet ()
+  (should (equal "  3. "
+                 (gethash :bullet (car (org-structure "  3. header"))))))
 
 (ert-deftest with-newline-single-line-text ()
   (should (equal "header"
@@ -118,9 +142,13 @@
   (should (equal 1
                  (gethash :level (car (org-structure "* header\n"))))))
 
-(ert-deftest with-newline-single-line-bullet ()
+(ert-deftest with-newline-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (car (org-structure "* header\n"))))))
+
+(ert-deftest with-newline-single-line-bullet ()
+  (should (equal "* "
+                 (gethash :bullet (car (org-structure "* header\n"))))))
 
 
 (ert-deftest children-dont-create-new-block ()
@@ -152,9 +180,14 @@
                  (gethash :level (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
                                                                     0)))))
 
-(ert-deftest child-block-single-line-bullet ()
+(ert-deftest child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
+                                                                          0)))))
+
+(ert-deftest child-block-single-line-bullet ()
+  (should (equal "** "
+                 (gethash :bullet (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
                                                                           0)))))
 
 
@@ -172,9 +205,14 @@
                  (gethash :level (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                     1)))))
 
-(ert-deftest second-child-block-single-line-bullet ()
+(ert-deftest second-child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                                                                          1)))))
+
+(ert-deftest second-child-block-single-line-bullet ()
+  (should (equal "** "
+                 (gethash :bullet (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                     1)))))
 
 
@@ -210,8 +248,16 @@
                                                              1
                                                              1)))))
 
-(ert-deftest third-nested-child-block-single-line-bullet ()
+(ert-deftest third-nested-child-block-single-line-bullet-type ()
   (should (equal ?*
+                 (gethash :bullet-type
+                          (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                                                  1)
+                                                             1
+                                                             1)))))
+
+(ert-deftest third-nested-child-block-single-line-bullet ()
+  (should (equal "*** "
                  (gethash :bullet-type
                           (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                   1)
@@ -329,7 +375,8 @@
                  (org-structure/to-string '(#s(hash-table data (:text "header"
                                                                       :children nil
                                                                       :level 1
-                                                                      :bullet-type ?*)))))))
+                                                                      :bullet-type ?*
+                                                                      :bullet "* ")))))))
 
 ;;;; tests that go from a string to a structure to a string
 (ert-deftest to-structure-to-string/just-one-block ()

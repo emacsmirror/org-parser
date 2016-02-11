@@ -64,6 +64,7 @@ Return a single block."
              table)
     (puthash :level level table)
     (puthash :bullet-type (org-structure/bullet-type full-bullet) table)
+    (puthash :bullet full-bullet table)
     table))
 
 (defun org-structure/bullet-type (full-bullet)
