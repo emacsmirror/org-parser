@@ -91,12 +91,30 @@ For example:
 
 would have two blocks at nesting level one; the first block having two lines, and the second: one."
   (let ((bullet (org-structure/get-bullet text)))
-    (mapcar (lambda (block-without-substring)
-              (format "%s%s" bullet block-without-substring))
-         (split-string text
-                       (regexp-quote (format "\n%s" bullet))
-                       t
-                       (format "\\(%s\\|\n\\)" (regexp-quote bullet))))))
+    (if (position (org-structure/bullet-type bullet)
+                  '(?. ?#))
+        (progn (string-match "^\\(\s*\\)[[:digit:]]"
+                             bullet)
+               (let* ((leading-spaces-in-input (match-string 1 bullet))
+                      (bullet-regexp (format "\n%s[[:digit:]]+[.)] " leading-spaces-in-input))
+                      (split-text (split-string text
+                                                bullet-regexp
+                                                t
+                                                "\n")))
+                 (if split-text
+                     (cons (car split-text)
+                           (mapcar (lambda (block-text)
+                                     (format "%s1. %s"
+                                             leading-spaces-in-input
+                                             block-text))
+                                   (cdr split-text)))
+                   nil)))
+      (mapcar (lambda (block-without-substring)
+                (format "%s%s" bullet block-without-substring))
+              (split-string text
+                            (regexp-quote (format "\n%s" bullet))
+                            t
+                            (format "\\(%s\\|\n\\)" (regexp-quote bullet)))))))
 
 (defun org-structure/to-string (structure-list)
   "Convert STRUCTURE-LIST, a list of structure hash tables, to a string.
@@ -109,9 +127,8 @@ This should be identical to the org file parsed to create the structure."
   "Convert STRUCTURE, a single structure hash table, to a string.
 
 This should be identical to the org file parsed to create the structure."
-  (format "%s %s\n%s"
-          (make-string (gethash :level structure)
-                       (gethash :bullet-type structure))
+  (format "%s%s\n%s"
+          (gethash :bullet structure)
           (gethash :text structure)
           (org-structure/to-string (gethash :children structure))))
 

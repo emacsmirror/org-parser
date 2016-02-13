@@ -258,11 +258,17 @@
 
 (ert-deftest third-nested-child-block-single-line-bullet ()
   (should (equal "*** "
-                 (gethash :bullet-type
+                 (gethash :bullet
                           (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                   1)
                                                              1
                                                              1)))))
+
+(ert-deftest nested-plain-list ()
+  (should (equal "1. "
+                 (gethash :bullet
+                          (org-structure/get-nested-children (car (org-structure "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces"))
+                                                             0)))))
 
 
 ;;;; get-blocks tests
@@ -301,6 +307,15 @@
   (should (equal '("** first block\n*** nested\n**** way nested" "** second block")
                  (org-structure/get-blocks "** first block\n*** nested\n**** way nested\n** second block"
                                            2))))
+
+(ert-deftest get-blocks-ordered-list-two-items ()
+  (should (equal '("1. what" "1. ever")
+                 (org-structure/get-blocks "1. what\n2. ever\n"
+                                           0))))
+
+(ert-deftest get-blocks-ordered-list-two-items-with-nesting ()
+  (should (equal '("1. what\n   1. nest!" "1. ever")
+                 (org-structure/get-blocks "1. what\n   1. nest!\n2. ever" 0))))
 
 (ert-deftest get-bullet/one-level-headline ()
   (should (equal "* "
@@ -398,6 +413,10 @@
 (ert-deftest to-structure-to-string/three-levels ()
   (should (equal "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n"
                  (org-structure/to-string (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n")))))
+
+(ert-deftest lots-of-bullet-types ()
+  (should (equal "* whatever\n** two\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces"
+                 (org-structure/to-string (org-structure "* whatever\n** two\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
 
 
 (ert-deftest nested-children/no-indices ()
