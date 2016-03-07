@@ -159,6 +159,19 @@
                  (length (gethash :children
                                   (car (org-structure "* top\n- first level\n** also first level")))))))
 
+(ert-deftest headline-with-body-text-has-correct-text ()
+  (should (equal "I'm in the body"
+                 (gethash :body
+                          (car (org-structure "* I'm the headline\nI'm in the body"))))))
+
+(ert-deftest headline-with-body-text-has-no-siblings ()
+  (should (equal 1
+                 (length (org-structure "* I'm the headline\nI'm in the body")))))
+
+(ert-deftest headline-with-body-text-has-no-children ()
+  (should (equal 0
+                 (length (gethash :children (car (org-structure "* I'm the headline\nI'm in the body")))))))
+
 
 ;;;; get-bullet tests
 (ert-deftest get-bullet/one-level-headline ()
@@ -500,11 +513,24 @@
                                                                         :bullet-type ?.)))))))
 
 
+(ert-deftest single-to-string/headline-and-body ()
+  (should (equal "* whatever\nHere's a body\n"
+                 (org-structure/single-to-string #s(hash-table data (:text "whatever"
+                                                                           :children nil
+                                                                           :bullet-type ?*
+                                                                           :body "Here's a body"))
+                                                 ""
+                                                 0))))
+
 
 ;;;; tests that go all the way around -- from a string to a structure to the original string
 (ert-deftest to-structure-to-string/just-one-block ()
   (should (equal "* header\n"
                  (org-structure/to-string (org-structure "* header\n")))))
+
+(ert-deftest to-structure-to-string/just-one-block-with-body ()
+  (should (equal "* header\nwith body\n"
+                 (org-structure/to-string (org-structure "* header\nwith body\n")))))
 
 (ert-deftest to-structure-to-string/simply-nested ()
   (should (equal "* header\n** nested\n"
@@ -759,6 +785,10 @@
   (should (equal '(("* one line"))
                  (org-structure/block-text '("* one line")))))
 
+(ert-deftest block-text/one-headline-with-body ()
+  (should (equal '(("* one line\nand a body"))
+                 (org-structure/block-text '("* one line\nand a body")))))
+
 (ert-deftest block-text/two-headlines ()
   (should (equal '(("* first headline") ("* second headline"))
                  (org-structure/block-text '("* first headline" "* second headline")))))
@@ -789,9 +819,57 @@
 
 
 
+(ert-deftest split-into-groups/single-headline ()
+  (should (equal '("* headline")
+                 (org-structure/split-into-groups "* headline\n"))))
+
+(ert-deftest split-into-groups/single-headline-with-text ()
+  (should (equal '("* headline\nhere's some text")
+                 (org-structure/split-into-groups "* headline\nhere's some text"))))
+
+(ert-deftest split-into-groups/two-headlines ()
+  (should (equal '("* headline" "* another headline")
+                 (org-structure/split-into-groups "* headline\n* another headline"))))
+
+(ert-deftest split-into-groups/nested-headlines ()
+  (should (equal '("* headline" "** another headline")
+                 (org-structure/split-into-groups "* headline\n** another headline"))))
+
+(ert-deftest split-into-groups/single-plain-list ()
+  (should (equal '("- plain-list")
+                 (org-structure/split-into-groups "- plain-list\n"))))
+
+(ert-deftest split-into-groups/single-plain-list-with-text ()
+  (should (equal '("- plain-list\nhere's some text")
+                 (org-structure/split-into-groups "- plain-list\nhere's some text"))))
+
+
+(ert-deftest split-into-groups/two-plain-lists ()
+  (should (equal '("- plain-list" "- another plain-list")
+                 (org-structure/split-into-groups "- plain-list\n- another plain-list"))))
+
+(ert-deftest split-into-groups/nested-plain-lists ()
+  (should (equal '("- plain-list" "- another plain-list")
+                 (org-structure/split-into-groups "- plain-list\n- another plain-list"))))
+
+
+
+
 (ert-deftest convert-text-block/simple-headline-text ()
   (should (equal "whatever"
                  (gethash :text (org-structure/convert-text-block '("* whatever"))))))
+
+(ert-deftest convert-text-block/simple-headline-text-ignoring-body ()
+  (should (equal "whatever"
+                 (gethash :text (org-structure/convert-text-block '("* whatever\nbody to ignore"))))))
+
+(ert-deftest convert-text-block/simple-headline-body ()
+  (should (equal "I'm a body!"
+                 (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!"))))))
+
+(ert-deftest convert-text-block/simple-headline-multiple-line-body ()
+  (should (equal "I'm a body!\nAnd still I come"
+                 (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!\nAnd still I come"))))))
 
 (ert-deftest convert-text-block/simple-headline-bullet-type ()
   (should (equal ?*
@@ -832,6 +910,57 @@
 (ert-deftest convert-text-block/multiple-nested-children ()
   (should (equal 3
                  (length (gethash :children (org-structure/convert-text-block '("* whatever" ("** nested") ("** nested two") ("**nested three!"))))))))
+
+
+
+(ert-deftest get-text/headline-plain-text ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "* I'm the text"))))
+
+(ert-deftest get-text/plain-list-plain-text ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "- I'm the text"))))
+
+(ert-deftest get-text/headline-plain-text-with-body ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "* I'm the text\nbut I'm the body"))))
+
+(ert-deftest get-text/plain-list-plain-text-with-body ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "- I'm the text\nbut I'm the body"))))
+
+(ert-deftest get-text/headline-plain-text-with-multiline-body ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "* I'm the text\nbut I'm the body\nand so am I."))))
+
+(ert-deftest get-text/plain-list-plain-text-with-multiline-body ()
+  (should (equal "I'm the text"
+                 (org-structure/get-text "- I'm the text\nbut I'm the body\nand so am I."))))
+
+
+
+(ert-deftest get-body/headline-plain-text ()
+  (should-not (org-structure/get-body "* I'm the text")))
+
+(ert-deftest get-body/plain-list-plain-text ()
+  (should-not (org-structure/get-body "- I'm the text")))
+
+(ert-deftest get-body/headline-plain-text-with-body ()
+  (should (equal "but I'm the body"
+                 (org-structure/get-body "* I'm the text\nbut I'm the body"))))
+
+(ert-deftest get-body/plain-list-plain-text-with-body ()
+  (should (equal "but I'm the body"
+                 (org-structure/get-body "- I'm the text\nbut I'm the body"))))
+
+(ert-deftest get-body/headline-plain-text-with-multiline-body ()
+  (should (equal "but I'm the body\nand so am I."
+                 (org-structure/get-body "* I'm the text\nbut I'm the body\nand so am I."))))
+
+(ert-deftest get-body/plain-list-plain-text-with-multiline-body ()
+  (should (equal "but I'm the body\nand so am I."
+                 (org-structure/get-body "- I'm the text\nbut I'm the body\nand so am I."))))
+
 
 
 
@@ -992,6 +1121,35 @@
 
 (ert-deftest plain-list?/plain-list-with-indented-asterisk ()
   (should (org-structure/plain-list? "  * plain here, but not sad")))
+
+(ert-deftest plain-list?/random-text ()
+  (should-not (org-structure/plain-list? "Not anything useful, even with * and -.")))
+
+
+
+(ert-deftest title-line?/headline ()
+  (should (org-structure/title-line? "* whatever")))
+
+(ert-deftest title-line?/headline-with-body ()
+  (should (org-structure/title-line? "* whatever\nhere's a body")))
+
+(ert-deftest title-line?/double-headline ()
+  (should (org-structure/title-line? "** whatever")))
+
+(ert-deftest title-line?/plain-list ()
+  (should (org-structure/title-line? "- whatever")))
+
+(ert-deftest title-line?/indented-plain-list ()
+  (should (org-structure/title-line? "  + whatever")))
+
+(ert-deftest title-line?/plain-list-with-body ()
+  (should (org-structure/title-line? "- whatever\nand here's a body")))
+
+(ert-deftest title-line?/not-a-title ()
+  (should-not (org-structure/title-line? "Not anything useful, even with * and -.")))
+
+(ert-deftest title-line?/not-a-title-indented ()
+  (should-not (org-structure/title-line? "   Not anything useful, even with * and -.")))
 
 
 

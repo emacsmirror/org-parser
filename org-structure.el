@@ -24,7 +24,25 @@
 
 (defun org-structure (text)
   "Return the org structure of TEXT."
-  (org-structure/convert-blocked-text (org-structure/block-text (split-string text "\n" t))))
+  (org-structure/convert-blocked-text (org-structure/block-text (org-structure/split-into-groups text))))
+
+(defun org-structure/split-into-groups (text)
+  "Split TEXT into groups; one group for each headline or plain list."
+  (let ((current-group "")
+        (groups nil))
+    (seq-do (lambda (line)
+              (if (org-structure/title-line? line)
+                  (progn (unless (equal current-group "")
+                           (push current-group groups))
+                         (setq current-group line))
+                (setq current-group
+                      (if (equal current-group "")
+                          line
+                        (format "%s\n%s" current-group line)))))
+            (split-string text "\n" t))
+    (push current-group groups)
+    (reverse groups)))
+
 
 (defun org-structure/guess-level (text)
   "Attempts to guess the level of the TEXT.
@@ -64,18 +82,23 @@ Ordered lists are ?. or ?)"
 (defun org-structure/convert-text-block (text-block)
   "Convert TEXT-BLOCK to an org structure.
 
-Return a single block.  A block has the following keywords:
+Return a single structure.  A structure has the following keywords:
 
 :text -- the text on the first line of the block.
+:body -- the text on following lines of the block, as a string with newlines.
+    For example:
+    * this is the 'text'
+      This is the 'body', which can
+      continue to multiple lines.
 :children -- a list of child blocks.
 :bullet-type -- a character indicating the type of bullet used,
     either ?*, ?-, ?+, ?., or ?) .  For ordered lists --
     (either ?\) or ?.) -- this is the character /after/ the number.
     For other types of blocks, the bullet is the entire number."
-
   (let ((table (make-hash-table))
         (text (car text-block)))
     (puthash :text (org-structure/get-text text) table)
+    (puthash :body (org-structure/get-body text) table)
     (puthash :bullet-type (org-structure/bullet-type text) table)
     (puthash :children (org-structure/convert-blocked-text (cdr text-block)) table)
     table))
@@ -88,6 +111,16 @@ Return a single block.  A block has the following keywords:
          (match-string 1 text))
         ((string-match "\\` *[[:digit:]]+[.)] \\(.+\\)" text)
          (match-string 1 text))))
+
+(defun org-structure/get-body (text)
+  "Return the body of a given TEXT.
+
+This method will drop initial newlines, then treat everything after a newline as the body."
+
+  (let ((lines (split-string text "\n" t)))
+    (when (cdr lines)
+      (string-join (cdr lines)
+                   "\n"))))
 
 (defun org-structure/block-text (lines)
   "Block the given LINES into its overall structure.
@@ -118,6 +151,14 @@ For example, a block that starts '* headline' should be in the same block
          (< (org-structure/guess-level original-line)
             (org-structure/guess-level current-line)))))
 
+(defun org-structure/title-line? (line)
+  "Return whether LINE corresponds to a title line.
+
+A title line is the first line of a headline or plain list."
+
+  (or (org-structure/headline? line)
+      (org-structure/plain-list? line)))
+
 (defun org-structure/headline? (line-or-char)
   "Return t if LINE-OR-CHAR is a headline.
 
@@ -139,6 +180,8 @@ indicating the bullet type."
       (not (org-structure/headline? line-or-char))
     (and (> (length line-or-char)
             0)
+         (or (org-structure/ordered-list? line-or-char)
+             (string-match "\\`\s*[-*+] " line-or-char))
          (not (org-structure/headline? line-or-char)))))
 
 (defun org-structure/ordered-list? (line-or-char)
@@ -209,12 +252,15 @@ This should be identical to the org file parsed to create the structure."
   "Create the string for STRUCTURE, with parent having PARENT-HEADLINE.
 
 SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
-  (let ((this-bullet (org-structure/make-bullet structure parent-headline siblings-before-this-one)))
-    (format "%s%s\n%s"
-            this-bullet
-            (gethash :text structure)
-            (org-structure/to-string-helper (gethash :children structure)
-                                            this-bullet))))
+  (let* ((this-bullet (org-structure/make-bullet structure parent-headline siblings-before-this-one))
+         (title-line (format "%s%s"
+                             this-bullet
+                             (gethash :text structure)))
+         (children-text (org-structure/to-string-helper (gethash :children structure)
+                                                        this-bullet)))
+    (if (gethash :body structure)
+        (format "%s\n%s\n%s" title-line (gethash :body structure) children-text)
+      (format "%s\n%s" title-line children-text))))
 
 
 (defun org-structure/get-nested-children (structure &rest children-indices)
