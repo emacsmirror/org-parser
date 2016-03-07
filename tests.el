@@ -781,76 +781,76 @@
 
 
 
-(ert-deftest block-text/one-headline ()
+(ert-deftest make-text-tree/one-headline ()
   (should (equal '(("* one line"))
-                 (org-structure/block-text '("* one line")))))
+                 (org-structure/make-text-tree '("* one line")))))
 
-(ert-deftest block-text/one-headline-with-body ()
+(ert-deftest make-text-tree/one-headline-with-body ()
   (should (equal '(("* one line\nand a body"))
-                 (org-structure/block-text '("* one line\nand a body")))))
+                 (org-structure/make-text-tree '("* one line\nand a body")))))
 
-(ert-deftest block-text/two-headlines ()
+(ert-deftest make-text-tree/two-headlines ()
   (should (equal '(("* first headline") ("* second headline"))
-                 (org-structure/block-text '("* first headline" "* second headline")))))
+                 (org-structure/make-text-tree '("* first headline" "* second headline")))))
 
-(ert-deftest block-text/one-nested-headline ()
+(ert-deftest make-text-tree/one-nested-headline ()
   (should (equal '(("* first headline" ("** nested headline")))
-                 (org-structure/block-text '("* first headline" "** nested headline")))))
+                 (org-structure/make-text-tree '("* first headline" "** nested headline")))))
 
-(ert-deftest block-text/nested-plain-list ()
+(ert-deftest make-text-tree/nested-plain-list ()
   (should (equal '(("* first headline" ("- I'm nested")))
-                 (org-structure/block-text '("* first headline" "- I'm nested")))))
+                 (org-structure/make-text-tree '("* first headline" "- I'm nested")))))
 
-(ert-deftest block-text/nested-plain-list-and-nested-headline ()
+(ert-deftest make-text-tree/nested-plain-list-and-nested-headline ()
   (should (equal '(("* first headline" ("- I'm nested") ("** I'm nested too")))
-                 (org-structure/block-text '("* first headline" "- I'm nested" "** I'm nested too")))))
+                 (org-structure/make-text-tree '("* first headline" "- I'm nested" "** I'm nested too")))))
 
-(ert-deftest block-text/nested-plain-list-and-nested-headline-with-followup-headline ()
+(ert-deftest make-text-tree/nested-plain-list-and-nested-headline-with-followup-headline ()
   (should (equal '(("* first headline" ("- I'm nested") ("** I'm nested too")) ("* also first-level headline"))
-                 (org-structure/block-text '("* first headline" "- I'm nested" "** I'm nested too" "* also first-level headline")))))
+                 (org-structure/make-text-tree '("* first headline" "- I'm nested" "** I'm nested too" "* also first-level headline")))))
 
-(ert-deftest block-text/multiple-headlines ()
+(ert-deftest make-text-tree/multiple-headlines ()
   (should (equal '(("* first headline") ("* second headline") ("* third headline"))
-                 (org-structure/block-text '("* first headline" "* second headline" "* third headline")))))
+                 (org-structure/make-text-tree '("* first headline" "* second headline" "* third headline")))))
 
-(ert-deftest block-text/multiple-nested-headlines ()
+(ert-deftest make-text-tree/multiple-nested-headlines ()
   (should (equal '(("* first headline" ("** nested headline")) ("* second top headline" ("** and more children") ("** and more more children")))
-                 (org-structure/block-text '("* first headline" "** nested headline" "* second top headline" "** and more children" "** and more more children")))))
+                 (org-structure/make-text-tree '("* first headline" "** nested headline" "* second top headline" "** and more children" "** and more more children")))))
 
 
 
-(ert-deftest split-into-groups/single-headline ()
+(ert-deftest split-into-blocks/single-headline ()
   (should (equal '("* headline")
-                 (org-structure/split-into-groups "* headline\n"))))
+                 (org-structure/split-into-blocks "* headline\n"))))
 
-(ert-deftest split-into-groups/single-headline-with-text ()
+(ert-deftest split-into-blocks/single-headline-with-text ()
   (should (equal '("* headline\nhere's some text")
-                 (org-structure/split-into-groups "* headline\nhere's some text"))))
+                 (org-structure/split-into-blocks "* headline\nhere's some text"))))
 
-(ert-deftest split-into-groups/two-headlines ()
+(ert-deftest split-into-blocks/two-headlines ()
   (should (equal '("* headline" "* another headline")
-                 (org-structure/split-into-groups "* headline\n* another headline"))))
+                 (org-structure/split-into-blocks "* headline\n* another headline"))))
 
-(ert-deftest split-into-groups/nested-headlines ()
+(ert-deftest split-into-blocks/nested-headlines ()
   (should (equal '("* headline" "** another headline")
-                 (org-structure/split-into-groups "* headline\n** another headline"))))
+                 (org-structure/split-into-blocks "* headline\n** another headline"))))
 
-(ert-deftest split-into-groups/single-plain-list ()
+(ert-deftest split-into-blocks/single-plain-list ()
   (should (equal '("- plain-list")
-                 (org-structure/split-into-groups "- plain-list\n"))))
+                 (org-structure/split-into-blocks "- plain-list\n"))))
 
-(ert-deftest split-into-groups/single-plain-list-with-text ()
+(ert-deftest split-into-blocks/single-plain-list-with-text ()
   (should (equal '("- plain-list\nhere's some text")
-                 (org-structure/split-into-groups "- plain-list\nhere's some text"))))
+                 (org-structure/split-into-blocks "- plain-list\nhere's some text"))))
 
 
-(ert-deftest split-into-groups/two-plain-lists ()
+(ert-deftest split-into-blocks/two-plain-lists ()
   (should (equal '("- plain-list" "- another plain-list")
-                 (org-structure/split-into-groups "- plain-list\n- another plain-list"))))
+                 (org-structure/split-into-blocks "- plain-list\n- another plain-list"))))
 
-(ert-deftest split-into-groups/nested-plain-lists ()
+(ert-deftest split-into-blocks/nested-plain-lists ()
   (should (equal '("- plain-list" "- another plain-list")
-                 (org-structure/split-into-groups "- plain-list\n- another plain-list"))))
+                 (org-structure/split-into-blocks "- plain-list\n- another plain-list"))))
 
 
 
@@ -964,45 +964,45 @@
 
 
 
-(ert-deftest convert-blocked-text/one-headline ()
+(ert-deftest convert-text-tree/one-headline ()
   (should (equal 1
-                 (length (org-structure/convert-blocked-text '(("* a single headline")))))))
+                 (length (org-structure/convert-text-tree '(("* a single headline")))))))
 
-(ert-deftest convert-blocked-text/one-headline-with-children ()
+(ert-deftest convert-text-tree/one-headline-with-children ()
   (should (equal 1
-                 (length (org-structure/convert-blocked-text '(("* a single headline" ("** but with children"))))))))
+                 (length (org-structure/convert-text-tree '(("* a single headline" ("** but with children"))))))))
 
 
 
-(ert-deftest same-block/headline-1-headline-1 ()
-  (should-not (org-structure/same-block? "* headline 1" "* another headline")))
+(ert-deftest descendent/headline-1-headline-1 ()
+  (should-not (org-structure/descendent? "* headline 1" "* another headline")))
 
-(ert-deftest same-block/headline-2-headline-2 ()
-  (should-not (org-structure/same-block? "** headline 1" "** another headline")))
+(ert-deftest descendent/headline-2-headline-2 ()
+  (should-not (org-structure/descendent? "** headline 1" "** another headline")))
 
-(ert-deftest same-block/headline-1-headline-2 ()
-  (should (org-structure/same-block? "* headline 1" "** nested headline")))
+(ert-deftest descendent/headline-1-headline-2 ()
+  (should (org-structure/descendent? "* headline 1" "** nested headline")))
 
-(ert-deftest same-block/headline-1-headline-3 ()
-  (should (org-structure/same-block? "* headline 1" "*** another headline")))
+(ert-deftest descendent/headline-1-headline-3 ()
+  (should (org-structure/descendent? "* headline 1" "*** another headline")))
 
-(ert-deftest same-block/headline-1-plain-1 ()
-  (should (org-structure/same-block? "* headline 1" "- plain here")))
+(ert-deftest descendent/headline-1-plain-1 ()
+  (should (org-structure/descendent? "* headline 1" "- plain here")))
 
-(ert-deftest same-block/headline-2-plain-1 ()
-  (should (org-structure/same-block? "** headline 1" "- plain here")))
+(ert-deftest descendent/headline-2-plain-1 ()
+  (should (org-structure/descendent? "** headline 1" "- plain here")))
 
-(ert-deftest same-block/headline-1-plain-2 ()
-  (should (org-structure/same-block? "* headline 1" " - plain list")))
+(ert-deftest descendent/headline-1-plain-2 ()
+  (should (org-structure/descendent? "* headline 1" " - plain list")))
 
-(ert-deftest same-block/headline-1-ordered-1 ()
-  (should (org-structure/same-block? "* headline 1" "17. ordered")))
+(ert-deftest descendent/headline-1-ordered-1 ()
+  (should (org-structure/descendent? "* headline 1" "17. ordered")))
 
-(ert-deftest same-block/plain-1-headline-1 ()
-  (should-not (org-structure/same-block? "- plain" "* headline")))
+(ert-deftest descendent/plain-1-headline-1 ()
+  (should-not (org-structure/descendent? "- plain" "* headline")))
 
-(ert-deftest same-block/plain-1-headline-2 ()
-  (should-not (org-structure/same-block? "- plain" "** nested")))
+(ert-deftest descendent/plain-1-headline-2 ()
+  (should-not (org-structure/descendent? "- plain" "** nested")))
 
 
 
