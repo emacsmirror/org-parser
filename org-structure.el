@@ -24,7 +24,7 @@
 
 (defun org-structure (text)
   "Return the org structure of TEXT."
-  (org-structure/convert-text-tree (org-structure/make-text-tree (org-structure/split-into-blocks text))))
+  (org-structure/convert-text-tree (org-structure/make-text-tree (org-structure/split-into-blocks (substring-no-properties text)))))
 
 (defun org-structure/split-into-blocks (text)
   "Split TEXT into blocks; one block for each headline or plain list."
