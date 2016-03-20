@@ -85,7 +85,7 @@ Ordered lists are ?. or ?)"
 Return a single structure.  A structure has the following keywords:
 
 :text -- the text on the first line of the block.
-:body -- the text on following lines of the block, as a string with newlines.
+:body -- the text on following lines of the block, as a list of strings.
     For example:
     * this is the 'text'
       This is the 'body', which can
@@ -119,8 +119,7 @@ This method will drop initial newlines, then treat everything after a newline as
 
   (let ((lines (split-string text "\n" t)))
     (when (cdr lines)
-      (string-join (cdr lines)
-                   "\n"))))
+      (cdr lines))))
 
 (defun org-structure/make-text-tree (lines)
   "Organize the given LINES into the overall tree structure.
@@ -259,7 +258,7 @@ SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
          (children-text (org-structure/to-string-helper (gethash :children structure)
                                                         this-bullet)))
     (if (gethash :body structure)
-        (format "%s\n%s\n%s" title-line (gethash :body structure) children-text)
+        (format "%s\n%s\n%s" title-line (string-join (gethash :body structure) "\n") children-text)
       (format "%s\n%s" title-line children-text))))
 
 

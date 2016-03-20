@@ -160,7 +160,7 @@
                                   (car (org-structure "* top\n- first level\n** also first level")))))))
 
 (ert-deftest headline-with-body-text-has-correct-text ()
-  (should (equal "I'm in the body"
+  (should (equal '("I'm in the body")
                  (gethash :body
                           (car (org-structure "* I'm the headline\nI'm in the body"))))))
 
@@ -518,7 +518,16 @@
                  (org-structure/single-to-string #s(hash-table data (:text "whatever"
                                                                            :children nil
                                                                            :bullet-type ?*
-                                                                           :body "Here's a body"))
+                                                                           :body ("Here's a body")))
+                                                 ""
+                                                 0))))
+
+(ert-deftest single-to-string/headline-and-multiline-body ()
+  (should (equal "* whatever\nHere's a body\non two lines\n"
+                 (org-structure/single-to-string #s(hash-table data (:text "whatever"
+                                                                           :children nil
+                                                                           :bullet-type ?*
+                                                                           :body ("Here's a body" "on two lines")))
                                                  ""
                                                  0))))
 
@@ -531,6 +540,10 @@
 (ert-deftest to-structure-to-string/just-one-block-with-body ()
   (should (equal "* header\nwith body\n"
                  (org-structure/to-string (org-structure "* header\nwith body\n")))))
+
+(ert-deftest to-structure-to-string/just-one-block-with-multiline-body ()
+  (should (equal "* header\nwith body\non two lines\n"
+                 (org-structure/to-string (org-structure "* header\nwith body\non two lines")))))
 
 (ert-deftest to-structure-to-string/simply-nested ()
   (should (equal "* header\n** nested\n"
@@ -864,11 +877,11 @@
                  (gethash :text (org-structure/convert-text-block '("* whatever\nbody to ignore"))))))
 
 (ert-deftest convert-text-block/simple-headline-body ()
-  (should (equal "I'm a body!"
+  (should (equal '("I'm a body!")
                  (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!"))))))
 
 (ert-deftest convert-text-block/simple-headline-multiple-line-body ()
-  (should (equal "I'm a body!\nAnd still I come"
+  (should (equal '("I'm a body!" "And still I come")
                  (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!\nAnd still I come"))))))
 
 (ert-deftest convert-text-block/simple-headline-bullet-type ()
@@ -946,19 +959,19 @@
   (should-not (org-structure/get-body "- I'm the text")))
 
 (ert-deftest get-body/headline-plain-text-with-body ()
-  (should (equal "but I'm the body"
+  (should (equal '("but I'm the body")
                  (org-structure/get-body "* I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-body/plain-list-plain-text-with-body ()
-  (should (equal "but I'm the body"
+  (should (equal '("but I'm the body")
                  (org-structure/get-body "- I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-body/headline-plain-text-with-multiline-body ()
-  (should (equal "but I'm the body\nand so am I."
+  (should (equal '("but I'm the body" "and so am I.")
                  (org-structure/get-body "* I'm the text\nbut I'm the body\nand so am I."))))
 
 (ert-deftest get-body/plain-list-plain-text-with-multiline-body ()
-  (should (equal "but I'm the body\nand so am I."
+  (should (equal '("but I'm the body" "and so am I.")
                  (org-structure/get-body "- I'm the text\nbut I'm the body\nand so am I."))))
 
 
