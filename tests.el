@@ -26,6 +26,30 @@
   (should (equal 1
                  (length (org-structure "- header")))))
 
+(ert-deftest single-line-with-link-text-before-link ()
+  (let ((text (gethash :text (first (org-structure "* here is [[http://zck.me/][my site]]")))))
+    (should (listp text))
+    (should (equal 2
+                   (length text)))
+    (should (equal "here is "
+                   (first text)))
+    (should (hash-table-p (second text)))
+    (should (equal :link (gethash :type (second text))))
+    (should (equal "http://zck.me/" (gethash :target (second text))))
+    (should (equal "my site" (gethash :text (second text))))))
+
+(ert-deftest single-line-with-link-text-link-text ()
+  (let ((text (gethash :text (first (org-structure "* here is [[http://zck.me/][my site]]")))))
+    (should (listp text))
+    (should (equal 2
+                   (length text)))
+    (should (hash-table-p (second text)))
+    (should (equal "my site"
+                   (gethash :text (second text))))
+    (should (equal "http://zck.me/"
+                   (gethash :target (second text))))))
+
+
 (ert-deftest single-plain-list-text ()
   (should (equal "header"
                  (gethash :text (car (org-structure "- header"))))))
@@ -677,61 +701,151 @@
                  (org-structure/bullet-type "     3. "))))
 
 
-(ert-deftest get-text/simple-headline ()
+(ert-deftest remove-bullet/simple-headline ()
   (should (equal "headline"
-                 (org-structure/get-text "* headline"))))
+                 (org-structure/remove-bullet "* headline"))))
 
-(ert-deftest get-text/headline-2 ()
+(ert-deftest remove-bullet/headline-2 ()
   (should (equal "my headline"
-                 (org-structure/get-text "** my headline"))))
+                 (org-structure/remove-bullet "** my headline"))))
 
-(ert-deftest get-text/headline-3 ()
+(ert-deftest remove-bullet/headline-3 ()
   (should (equal "another headline"
-                 (org-structure/get-text "*** another headline"))))
+                 (org-structure/remove-bullet "*** another headline"))))
 
-(ert-deftest get-text/plain-list ()
+(ert-deftest remove-bullet/plain-list ()
   (should (equal "a new list"
-                 (org-structure/get-text "- a new list"))))
+                 (org-structure/remove-bullet "- a new list"))))
 
-(ert-deftest get-text/indented-plain-list ()
+(ert-deftest remove-bullet/indented-plain-list ()
   (should (equal "a new list"
-                 (org-structure/get-text "  - a new list"))))
+                 (org-structure/remove-bullet "  - a new list"))))
 
-(ert-deftest get-text/plain-list-plus ()
+(ert-deftest remove-bullet/plain-list-plus ()
   (should (equal "a new list"
-                 (org-structure/get-text "+ a new list"))))
+                 (org-structure/remove-bullet "+ a new list"))))
 
-(ert-deftest get-text/indented-plain-list-plus ()
+(ert-deftest remove-bullet/indented-plain-list-plus ()
   (should (equal "a new list"
-                 (org-structure/get-text "  + a new list"))))
+                 (org-structure/remove-bullet "  + a new list"))))
 
-(ert-deftest get-text/quite-indented-plain-list-plus ()
+(ert-deftest remove-bullet/quite-indented-plain-list-plus ()
   (should (equal "a new list"
-                 (org-structure/get-text "     + a new list"))))
+                 (org-structure/remove-bullet "     + a new list"))))
 
-(ert-deftest get-text/stupid-plain-list-with-asterisks ()
+(ert-deftest remove-bullet/stupid-plain-list-with-asterisks ()
   (should (equal "this is a dumb kind of list"
-                 (org-structure/get-text "  * this is a dumb kind of list"))))
+                 (org-structure/remove-bullet "  * this is a dumb kind of list"))))
 
-(ert-deftest get-text/ordered-list ()
+(ert-deftest remove-bullet/ordered-list ()
   (should (equal "a new list"
-                 (org-structure/get-text "1. a new list"))))
+                 (org-structure/remove-bullet "1. a new list"))))
 
-(ert-deftest get-text/indented-ordered-list ()
+(ert-deftest remove-bullet/indented-ordered-list ()
   (should (equal "a new list"
-                 (org-structure/get-text "  1. a new list"))))
+                 (org-structure/remove-bullet "  1. a new list"))))
 
-(ert-deftest get-text/ordered-list-paren ()
+(ert-deftest remove-bullet/ordered-list-paren ()
   (should (equal "a new list"
-                 (org-structure/get-text "11) a new list"))))
+                 (org-structure/remove-bullet "11) a new list"))))
 
-(ert-deftest get-text/indented-ordered-list-paren ()
+(ert-deftest remove-bullet/indented-ordered-list-paren ()
   (should (equal "a new list"
-                 (org-structure/get-text "  2) a new list"))))
+                 (org-structure/remove-bullet "  2) a new list"))))
 
-(ert-deftest get-text/quite-ordered-plain-list-paren ()
+(ert-deftest remove-bullet/quite-ordered-plain-list-paren ()
   (should (equal "a new list"
-                 (org-structure/get-text "     7) a new list"))))
+                 (org-structure/remove-bullet "     7) a new list"))))
+
+(ert-deftest remove-bullet/headline-plain-text-with-body ()
+  (should (equal "I'm the text\nbut I'm the body"
+                 (org-structure/remove-bullet "* I'm the text\nbut I'm the body"))))
+
+(ert-deftest remove-bullet/plain-list-plain-text-with-body ()
+  (should (equal "I'm the text\nbut I'm the body"
+                 (org-structure/remove-bullet "- I'm the text\nbut I'm the body"))))
+
+(ert-deftest remove-bullet/plain-list-plain-text-with-body ()
+  (should (equal "I'm the text\nbut I'm the body"
+                 (org-structure/remove-bullet "27. I'm the text\nbut I'm the body"))))
+
+(ert-deftest remove-bullet/headline-plain-text-with-multiline-body ()
+  (should (equal "I'm the text\nbut I'm the body\nand so am I."
+                 (org-structure/remove-bullet "* I'm the text\nbut I'm the body\nand so am I."))))
+
+(ert-deftest remove-bullet/plain-list-plain-text-with-multiline-body ()
+  (should (equal "I'm the text\nbut I'm the body\nand so am I."
+                 (org-structure/remove-bullet "- I'm the text\nbut I'm the body\nand so am I."))))
+
+(ert-deftest remove-bullet/headline-dont-need-space-after-bullet ()
+  (should (equal "I'm text"
+                 (org-structure/remove-bullet "*I'm text"))))
+
+(ert-deftest remove-bullet/plain-list-dont-need-space-after-bullet ()
+  (should (equal "I'm text"
+                 (org-structure/remove-bullet "-I'm text"))))
+
+(ert-deftest remove-bullet/ordered-list-dont-need-space-after-bullet ()
+  (should (equal "I'm text"
+                 (org-structure/remove-bullet "7.I'm text"))))
+
+
+(ert-deftest make-link-hash/basic ()
+  (let ((link-hash (org-structure/make-link-hash "http://zck.me/" "This is a link!")))
+    (should (hash-table-p link-hash))
+    (should (equal "http://zck.me/"
+                   (gethash :target link-hash)))
+    (should (equal "This is a link!"
+                   (gethash :text link-hash)))))
+
+
+(ert-deftest parse-for-markup/no-markup ()
+  (should (equal (list "I'm a headline")
+                 (org-structure/parse-for-markup "I'm a headline"))))
+
+(ert-deftest parse-for-markup/only-a-link ()
+  (let ((parsed (org-structure/parse-for-markup "[[http://zck.me/][my site]]")))
+    (should (equal 1 (length parsed)))
+    (should (hash-table-p (first parsed)))
+    (should (equal :link (gethash :type (first parsed))))
+    (should (equal "http://zck.me/" (gethash :target (first parsed))))
+    (should (equal "my site" (gethash :text (first parsed))))))
+
+(ert-deftest parse-for-markup/text-before-link ()
+  (let ((parsed (org-structure/parse-for-markup "Here's a link -> [[http://zck.me/][my site]]")))
+    (should (equal 2 (length parsed)))
+    (should (equal "Here's a link -> " (first parsed)))
+    (should (hash-table-p (second parsed)))
+    (should (equal :link (gethash :type (second parsed))))
+    (should (equal "http://zck.me/" (gethash :target (second parsed))))
+    (should (equal "my site" (gethash :text (second parsed))))))
+
+(ert-deftest parse-for-markup/text-after-link ()
+    (let ((parsed (org-structure/parse-for-markup "[[http://zck.me/][my site]] <- there it was")))
+      (should (equal 2 (length parsed)))
+      (should (hash-table-p (first parsed)))
+      (should (equal :link (gethash :type (first parsed))))
+      (should (equal "http://zck.me/" (gethash :target (first parsed))))
+      (should (equal "my site" (gethash :text (first parsed))))
+      (should (equal " <- there it was" (second parsed)))))
+
+(ert-deftest parse-for-markup/text-before-and-after-link ()
+  (let ((parsed (org-structure/parse-for-markup "Here's a link -> [[http://zck.me/][my site]] <- there it was")))
+    (should (equal 3 (length parsed)))
+    (should (equal "Here's a link -> " (first parsed)))
+    (should (hash-table-p (second parsed)))
+    (should (equal :link (gethash :type (second parsed))))
+    (should (equal "http://zck.me/" (gethash :target (second parsed))))
+    (should (equal "my site" (gethash :text (second parsed))))
+    (should (equal " <- there it was" (third parsed)))))
+
+(ert-deftest parse-for-markup/two-links ()
+  (let ((parsed (org-structure/parse-for-markup "[[http://zck.me/][my site]][[https://www.gnu.org/software/emacs/][Emacs!]]")))
+    (should (equal 2 (length parsed)))
+    (should (equal :link (gethash :type (first parsed))))
+    (should (equal "http://zck.me/" (gethash :target (first parsed))))
+    (should (equal :link (gethash :type (second parsed))))
+    (should (equal "https://www.gnu.org/software/emacs/" (gethash :target (second parsed))))))
 
 
 
@@ -922,8 +1036,7 @@
 
 (ert-deftest convert-text-block/multiple-nested-children ()
   (should (equal 3
-                 (length (gethash :children (org-structure/convert-text-block '("* whatever" ("** nested") ("** nested two") ("**nested three!"))))))))
-
+                 (length (gethash :children (org-structure/convert-text-block '("* whatever" ("** nested") ("** nested two") ("** nested three!"))))))))
 
 
 (ert-deftest get-text/headline-plain-text ()
@@ -936,7 +1049,7 @@
 
 (ert-deftest get-text/headline-plain-text-with-body ()
   (should (equal "I'm the text"
-                 (org-structure/get-text "* I'm the text\nbut I'm the body"))))
+                 (org-structure/get-text "** I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-text/plain-list-plain-text-with-body ()
   (should (equal "I'm the text"
@@ -949,6 +1062,22 @@
 (ert-deftest get-text/plain-list-plain-text-with-multiline-body ()
   (should (equal "I'm the text"
                  (org-structure/get-text "- I'm the text\nbut I'm the body\nand so am I."))))
+
+(ert-deftest get-text/headline-with-link ()
+  (let ((gotten-text (org-structure/get-text "* headline [[https://bitbucket.org/zck/org-structure.el][with a link]] and text after")))
+    (should (listp gotten-text))
+    (should (equal 3 (length gotten-text)))
+    (should (stringp (first gotten-text)))
+    (should (hash-table-p (second gotten-text)))
+    (should (stringp (third gotten-text)))))
+
+(ert-deftest get-text/headline-with-link-and-body ()
+  (let ((gotten-text (org-structure/get-text "* headline [[https://bitbucket.org/zck/org-structure.el][with a link]] and text after\nand more stuff")))
+    (should (listp gotten-text))
+    (should (equal 3 (length gotten-text)))
+    (should (stringp (first gotten-text)))
+    (should (hash-table-p (second gotten-text)))
+    (should (stringp (third gotten-text)))))
 
 
 
@@ -974,6 +1103,13 @@
   (should (equal '("but I'm the body" "and so am I.")
                  (org-structure/get-body "- I'm the text\nbut I'm the body\nand so am I."))))
 
+(ert-deftest get-body/headline-with-link-in-body ()
+  (let ((gotten-text (org-structure/get-body "* headline\nWith a body [[https://bitbucket.org/zck/org-structure.el][with a link]] and text after")))
+    (should (listp gotten-text))
+    (should (equal 3 (length gotten-text)))
+    (should (stringp (first gotten-text)))
+    (should (hash-table-p (second gotten-text)))
+    (should (stringp (third gotten-text)))))
 
 
 
@@ -1216,5 +1352,14 @@
 
 (ert-deftest ordered-list/indented-plus-list ()
   (should-not (org-structure/ordered-list? "  + ")))
+
+
+(ert-deftest two-lines-on-second-level/only-one-child ()
+  (should (equal 1
+                 (length (gethash :children (first (org-structure "* header\n** second level\nwith text")))))))
+
+(ert-deftest two-lines-on-second-level/ ()
+  (should (equal 1
+                 (length (gethash :children (first (org-structure "* header\n** second level\nwith text")))))))
 
 ;;; tests.el ends here

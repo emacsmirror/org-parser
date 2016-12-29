@@ -103,23 +103,76 @@ Return a single structure.  A structure has the following keywords:
     (puthash :children (org-structure/convert-text-tree (cdr text-block)) table)
     table))
 
-(defun org-structure/get-text (text)
-  "Return TEXT without the bullet."
-  (cond ((string-match "\\`\\*+ \\(.+\\)" text)
+(defun org-structure/remove-bullet (text)
+  "Return TEXT without the bullet at the beginning."
+  (cond ((string-match "\\`\\*+ ?\\(\\(.\\|\n\\)+\\)" text)
          (match-string 1 text))
-        ((string-match "\\` *[-+*] \\(.+\\)" text)
+        ((string-match "\\` *[-+*] ?\\(\\(.\\|\n\\)+\\)" text)
          (match-string 1 text))
-        ((string-match "\\` *[[:digit:]]+[.)] \\(.+\\)" text)
+        ((string-match "\\` *[[:digit:]]+[.)] ?\\(\\(.\\|\n\\)+\\)" text)
          (match-string 1 text))))
+
+(defun org-structure/parse-for-markup (text)
+  "Convert TEXT into its structure, respecting markup.
+
+This handles things like links and italic text.
+
+This will return a list of things.  Each thing in this list will be
+either a string (for no markup), or a hash, with a :type key to
+indicate what the type of the markup is.
+
+Possible :type values are :link."
+  (let ((result-list nil)
+        (remaining-text text))
+    (if (string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
+                      remaining-text)
+        (let* ((text-before-link (match-string 1 text))
+               (target-text (match-string 2 text))
+               (link-text (match-string 3 text))
+               (link-hash (org-structure/make-link-hash target-text link-text))
+               (text-after-link (match-string 4 text)))
+          (if (string-empty-p text-before-link)
+              (cons link-hash
+                    (org-structure/parse-for-markup text-after-link))
+            (list* text-before-link
+                   link-hash
+                   (org-structure/parse-for-markup text-after-link))))
+      (unless (string-empty-p text) (list text)))))
+
+(defun org-structure/make-link-hash (target-text link-text)
+  "Make a link hash pointing to TARGET-TEXT with text LINK-TEXT.
+
+It will have keys :target, :text, and :type.  The :type value will be :link."
+  (let ((link-hash (make-hash-table)))
+    (puthash :target target-text link-hash)
+    (puthash :text link-text link-hash)
+    (puthash :type :link link-hash)
+    link-hash))
+
+(defun org-structure/get-text (text)
+  "Return the first line of TEXT without the bullet, parsed for org formatting.
+
+This is either a string, if the text is just text, or it can be a list
+of things, if there are other kinds of markup, like links or formatted
+text.  These other things will be hash tables"
+  (let* ((text-without-bullet (org-structure/remove-bullet text))
+         (first-line-text (car (split-string text-without-bullet "\n" t)))
+         (parsed-text (org-structure/parse-for-markup first-line-text)))
+    (if (and (listp parsed-text)
+                 (equal 1 (length parsed-text))
+                 (stringp (first parsed-text)))
+            (first parsed-text)
+          parsed-text)))
 
 (defun org-structure/get-body (text)
   "Return the body of a given TEXT.
 
-This method will drop initial newlines, then treat everything after a newline as the body."
+A body is a list of strings.  This method will drop initial newlines,
+then treat everything after a newline as the body."
 
   (let ((lines (split-string text "\n" t)))
     (when (cdr lines)
-      (cdr lines))))
+      (mapcan #'org-structure/parse-for-markup (cdr lines)))))
 
 (defun org-structure/make-text-tree (lines)
   "Organize the given LINES into the overall tree structure.
