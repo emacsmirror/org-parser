@@ -184,9 +184,29 @@
                                   (car (org-structure "* top\n- first level\n** also first level")))))))
 
 (ert-deftest headline-with-body-text-has-correct-text ()
-  (should (equal '("I'm in the body")
+  (should (equal '(("I'm in the body"))
                  (gethash :body
                           (car (org-structure "* I'm the headline\nI'm in the body"))))))
+
+(ert-deftest headline-multiline-body ()
+  (should (equal '(("first line") ("second line"))
+                 (gethash :body
+                          (car (org-structure "* ignored headline\nfirst line\nsecond line"))))))
+
+(ert-deftest headline-body-with-link ()
+  (let ((body (gethash :body (car (org-structure "* ignored headline\nhere's a body with [[http://example.com][a link!]]")))))
+    (should (equal 1
+                   (length body)))
+    (should (equal 2
+                   (length (first body))))
+    (should (equal "here's a body with "
+                   (first (first body))))
+    (let ((link-hash (second (first body))))
+      (should (hash-table-p link-hash))
+      (should (equal "http://example.com"
+                     (gethash :target link-hash)))
+      (should (equal "a link!"
+                     (gethash :text link-hash))))))
 
 (ert-deftest headline-with-body-text-has-no-siblings ()
   (should (equal 1
@@ -542,7 +562,7 @@
                  (org-structure/single-to-string #s(hash-table data (:text "whatever"
                                                                            :children nil
                                                                            :bullet-type ?*
-                                                                           :body ("Here's a body")))
+                                                                           :body (("Here's a body"))))
                                                  ""
                                                  0))))
 
@@ -551,7 +571,7 @@
                  (org-structure/single-to-string #s(hash-table data (:text "whatever"
                                                                            :children nil
                                                                            :bullet-type ?*
-                                                                           :body ("Here's a body" "on two lines")))
+                                                                           :body (("Here's a body") ("on two lines"))))
                                                  ""
                                                  0))))
 
@@ -632,6 +652,104 @@
 (ert-deftest to-structure-to-string/long-ordered-list-with-child ()
   (should (equal "1. thing\n2. thing\n3. thing\n4. thing\n5. thing\n6. thing\n7. thing\n8. thing\n9. thing\n10. thing\n    + yep, nested\n"
                  (org-structure/to-string (org-structure "1. thing\n2. thing\n3. thing\n4. thing\n5. thing\n6. thing\n7. thing\n8. thing\n9. thing\n10. thing\n    + yep, nested\n")))))
+
+
+(ert-deftest to-structure-to-string/link-in-headline ()
+  (let ((input "* headline with [[http://example.com][link]]!\n"))
+    (should (equal input
+                   (org-structure/to-string (org-structure input))))))
+
+(ert-deftest to-structure-to-string/link-in-body ()
+  (let ((input "* headline no link\nUntil the [[http://example.com][body]]!\n"))
+    (should (equal input
+                   (org-structure/to-string (org-structure input))))))
+
+(ert-deftest to-structure-to-string/link-in-nested-headline ()
+    (let ((input "* headline\n** Second headline with [[http://example.com][a link]]!\n"))
+      (should (equal input
+                     (org-structure/to-string (org-structure input))))))
+
+(ert-deftest to-structure-to-string/link-in-ordered-list ()
+  (let ((input "* headline\n1. Here's an ordered list\n2. With a [[http://bitbucket.org/zck/org-structure.el][link in the ordering]] with a bunch more text after\n"))
+    (should (equal input
+                   (org-structure/to-string (org-structure input))))))
+
+
+(ert-deftest format-text/basic-string ()
+  (should (equal "Yep, basic text."
+                 (org-structure/format-text "Yep, basic text."))))
+
+(ert-deftest format-text/string-list ()
+  (should (equal "Yep, basic text."
+                 (org-structure/format-text (list "Yep, basic" " text.")))))
+
+(ert-deftest format-text/link-list ()
+  (should (equal "Hi there this is [[http://example.com][a link]]!"
+                 (org-structure/format-text (list "Hi there this is "
+                                                  (org-structure/make-link-hash "http://example.com" "a link")
+                                                  "!")))))
+
+(ert-deftest format-text/multiple-link-list ()
+  (should (equal "Hi there this is [[http://example.com][one link]] [[http://zck.me][two links]]!"
+                 (org-structure/format-text (list "Hi there this is "
+                                                  (org-structure/make-link-hash "http://example.com" "one link")
+                                                  " "
+                                                  (org-structure/make-link-hash "http://zck.me" "two links")
+                                                  "!")))))
+
+(ert-deftest format-text-single-item/string ()
+  (should (equal "Some text here."
+                 (org-structure/format-text-single-item "Some text here."))))
+
+(ert-deftest format-text-single-item/string ()
+  (should (equal "[[http://example.com][I'm a link!]]"
+                 (org-structure/format-text-single-item (org-structure/make-link-hash "http://example.com" "I'm a link!")))))
+
+(ert-deftest format-body/single-line ()
+  (should (equal "I'm a body!\n"
+                 (org-structure/format-body '(("I'm a body!"))))))
+
+(ert-deftest format-body/two-lines ()
+  (should (equal "I'm a body\nAnd so am I!\n"
+                 (org-structure/format-body '(("I'm a body")
+                                             ("And so am I!"))))))
+
+(ert-deftest format-body/single-line-with-link ()
+  (should (equal "I've got [[http://example.com][a link]] inside me!\n"
+                 (org-structure/format-body (list (list "I've got "
+                                                        (org-structure/make-link-hash "http://example.com"
+                                                                                      "a link")
+                                                        " inside me!"))))))
+
+(ert-deftest format-body/multiple-lines-with-link ()
+  (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!\n"
+                 (org-structure/format-body (list (list "One body line and then:")
+                                                  (list "I've got "
+                                                        (org-structure/make-link-hash "http://example.com"
+                                                                                      "a link")
+                                                        " inside me!"))))))
+
+(ert-deftest format-body-line/single-string ()
+  (should (equal "Some text here"
+                 (org-structure/format-body-line '("Some text here")))))
+
+(ert-deftest format-body-line/multiple-strings ()
+  (should (equal "I've got some text in the body."
+                 (org-structure/format-body-line '("I've got" " some text " "in" " the body.")))))
+
+(ert-deftest format-body-line/single-link ()
+  (should (equal "[[http://example.com][I'm a link]]"
+                 (org-structure/format-body-line (list (org-structure/make-link-hash "http://example.com"
+                                                                                     "I'm a link"))))))
+
+(ert-deftest format-body-line/strings-and-link ()
+  (should (equal "I'm text and [[http://example.com][I'm a link]] and I'm more text and [[http://example.com][I'm another link]]"
+                 (org-structure/format-body-line (list "I'm text and "
+                                                       (org-structure/make-link-hash "http://example.com"
+                                                                                     "I'm a link")
+                                                       " and I'm more text and "
+                                                       (org-structure/make-link-hash "http://example.com"
+                                                                                     "I'm another link"))))))
 
 
 
@@ -991,11 +1109,11 @@
                  (gethash :text (org-structure/convert-text-block '("* whatever\nbody to ignore"))))))
 
 (ert-deftest convert-text-block/simple-headline-body ()
-  (should (equal '("I'm a body!")
+  (should (equal '(("I'm a body!"))
                  (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!"))))))
 
 (ert-deftest convert-text-block/simple-headline-multiple-line-body ()
-  (should (equal '("I'm a body!" "And still I come")
+  (should (equal '(("I'm a body!") ("And still I come"))
                  (gethash :body (org-structure/convert-text-block '("* whatever\nI'm a body!\nAnd still I come"))))))
 
 (ert-deftest convert-text-block/simple-headline-bullet-type ()
@@ -1088,28 +1206,28 @@
   (should-not (org-structure/get-body "- I'm the text")))
 
 (ert-deftest get-body/headline-plain-text-with-body ()
-  (should (equal '("but I'm the body")
+  (should (equal '(("but I'm the body"))
                  (org-structure/get-body "* I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-body/plain-list-plain-text-with-body ()
-  (should (equal '("but I'm the body")
+  (should (equal '(("but I'm the body"))
                  (org-structure/get-body "- I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-body/headline-plain-text-with-multiline-body ()
-  (should (equal '("but I'm the body" "and so am I.")
+  (should (equal '(("but I'm the body") ("and so am I."))
                  (org-structure/get-body "* I'm the text\nbut I'm the body\nand so am I."))))
 
 (ert-deftest get-body/plain-list-plain-text-with-multiline-body ()
-  (should (equal '("but I'm the body" "and so am I.")
+  (should (equal '(("but I'm the body") ("and so am I."))
                  (org-structure/get-body "- I'm the text\nbut I'm the body\nand so am I."))))
 
 (ert-deftest get-body/headline-with-link-in-body ()
   (let ((gotten-text (org-structure/get-body "* headline\nWith a body [[https://bitbucket.org/zck/org-structure.el][with a link]] and text after")))
     (should (listp gotten-text))
-    (should (equal 3 (length gotten-text)))
-    (should (stringp (first gotten-text)))
-    (should (hash-table-p (second gotten-text)))
-    (should (stringp (third gotten-text)))))
+    (should (equal 1 (length gotten-text)))
+    (should (stringp (first (first gotten-text))))
+    (should (hash-table-p (second (first gotten-text))))
+    (should (stringp (third (first gotten-text))))))
 
 
 

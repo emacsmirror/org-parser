@@ -85,11 +85,15 @@ Ordered lists are ?. or ?)"
 Return a single structure.  A structure has the following keywords:
 
 :text -- the text on the first line of the block.
-:body -- the text on following lines of the block, as a list of strings.
+:body -- the text on following lines of the block, as a list, where each line
+    is represented by a list of items.
     For example:
     * this is the 'text'
       This is the 'body', which can
       continue to multiple lines.
+
+    Results in:
+    '((\"This is the 'body', which can\") (\"continue to multiple lines.\"))
 :children -- a list of child blocks.
 :bullet-type -- a character indicating the type of bullet used,
     either ?*, ?-, ?+, ?., or ?) .  For ordered lists --
@@ -167,12 +171,15 @@ text.  These other things will be hash tables"
 (defun org-structure/get-body (text)
   "Return the body of a given TEXT.
 
-A body is a list of strings.  This method will drop initial newlines,
-then treat everything after a newline as the body."
+This method will drop initial newlines of TEXT, then treat everything
+after a newline as the body.
+
+The body is returned as a list, where each item in the list represents
+a line in TEXT.  Each line in TEXT is a list of items itself."
 
   (let ((lines (split-string text "\n" t)))
     (when (cdr lines)
-      (mapcan #'org-structure/parse-for-markup (cdr lines)))))
+      (mapcar #'org-structure/parse-for-markup (cdr lines)))))
 
 (defun org-structure/make-text-tree (lines)
   "Organize the given LINES into the overall tree structure.
@@ -307,12 +314,55 @@ SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
   (let* ((this-bullet (org-structure/make-bullet structure parent-headline siblings-before-this-one))
          (title-line (format "%s%s"
                              this-bullet
-                             (gethash :text structure)))
+                             (org-structure/format-text (gethash :text structure))))
          (children-text (org-structure/to-string-helper (gethash :children structure)
                                                         this-bullet)))
     (if (gethash :body structure)
-        (format "%s\n%s\n%s" title-line (string-join (gethash :body structure) "\n") children-text)
+        (format "%s\n%s\n%s"
+                title-line
+                (org-structure/format-body (gethash :body structure))
+                children-text)
       (format "%s\n%s" title-line children-text))))
+
+(defun org-structure/format-text (structure-text)
+  "Format STRUCTURE-TEXT into a string.
+
+STRUCTURE-TEXT is either a single string (in which case it returns
+unchanged), or a list of structure items, in which case this returns a
+string that's the formatted representation of the list."
+  (if (stringp structure-text)
+      structure-text
+    (string-join (mapcar #'org-structure/format-text-single-item
+                         ;;should this add newlines between items? Probably not. But does that mean that if we have a structure object with a body with multiple things in it, what happens?
+                         structure-text))))
+
+(defun org-structure/format-body (body-list)
+  "Format the body represented by BODY-LIST.
+
+Each element of BODY-LIST should be a list itself."
+  (string-join (mapcar #'org-structure/format-body-line
+                       body-list)
+               "\n"))
+
+(defun org-structure/format-body-line (body-line)
+  "Format BODY-LINE into a string."
+  (string-join (mapcar #'org-structure/format-text-single-item
+                       body-line)))
+
+(defun org-structure/format-text-single-item (structure-item)
+  "Format STRUCTURE-ITEM, a string or hash, into a string."
+  (cond ((stringp structure-item)
+         structure-item)
+
+        ;;for now, assume it's a link. Obviously this will have to
+        ;;change later, for other types of structured text.
+        ((hash-table-p structure-item)
+         (format "[[%s][%s]]"
+                 (gethash :target structure-item)
+                 (gethash :text structure-item)))
+        (t "")))
+
+
 
 
 (defun org-structure/get-nested-children (structure &rest children-indices)
