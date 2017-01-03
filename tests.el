@@ -706,23 +706,23 @@
                  (org-structure/format-text-single-item (org-structure/make-link-hash "http://example.com" "I'm a link!")))))
 
 (ert-deftest format-body/single-line ()
-  (should (equal "I'm a body!\n"
+  (should (equal "I'm a body!"
                  (org-structure/format-body '(("I'm a body!"))))))
 
 (ert-deftest format-body/two-lines ()
-  (should (equal "I'm a body\nAnd so am I!\n"
+  (should (equal "I'm a body\nAnd so am I!"
                  (org-structure/format-body '(("I'm a body")
                                              ("And so am I!"))))))
 
 (ert-deftest format-body/single-line-with-link ()
-  (should (equal "I've got [[http://example.com][a link]] inside me!\n"
+  (should (equal "I've got [[http://example.com][a link]] inside me!"
                  (org-structure/format-body (list (list "I've got "
                                                         (org-structure/make-link-hash "http://example.com"
                                                                                       "a link")
                                                         " inside me!"))))))
 
 (ert-deftest format-body/multiple-lines-with-link ()
-  (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!\n"
+  (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!"
                  (org-structure/format-body (list (list "One body line and then:")
                                                   (list "I've got "
                                                         (org-structure/make-link-hash "http://example.com"
