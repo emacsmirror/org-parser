@@ -156,17 +156,10 @@ It will have keys :target, :text, and :type.  The :type value will be :link."
 (defun org-structure/get-text (text)
   "Return the first line of TEXT without the bullet, parsed for org formatting.
 
-This is either a string, if the text is just text, or it can be a list
-of things, if there are other kinds of markup, like links or formatted
-text.  These other things will be hash tables"
+This is a list of items."
   (let* ((text-without-bullet (org-structure/remove-bullet text))
-         (first-line-text (car (split-string text-without-bullet "\n" t)))
-         (parsed-text (org-structure/parse-for-markup first-line-text)))
-    (if (and (listp parsed-text)
-                 (equal 1 (length parsed-text))
-                 (stringp (first parsed-text)))
-            (first parsed-text)
-          parsed-text)))
+         (first-line-text (car (split-string text-without-bullet "\n" t))))
+    (org-structure/parse-for-markup first-line-text)))
 
 (defun org-structure/get-body (text)
   "Return the body of a given TEXT.

@@ -12,7 +12,7 @@
                  (length (org-structure "* header")))))
 
 (ert-deftest single-line-text ()
-  (should (equal "header"
+  (should (equal '("header")
                  (gethash :text (car (org-structure "* header"))))))
 
 (ert-deftest single-line-children ()
@@ -51,7 +51,7 @@
 
 
 (ert-deftest single-plain-list-text ()
-  (should (equal "header"
+  (should (equal '("header")
                  (gethash :text (car (org-structure "- header"))))))
 
 (ert-deftest single-plain-list-children ()
@@ -78,7 +78,7 @@
                  (gethash :bullet-type (car (org-structure "  3. header"))))))
 
 (ert-deftest with-newline-single-line-text ()
-  (should (equal "header"
+  (should (equal '("header")
                  (gethash :text (car (org-structure "* header\n"))))))
 
 (ert-deftest with-newline-single-line-children ()
@@ -105,7 +105,7 @@
 
 
 (ert-deftest child-block-single-line-text ()
-  (should (equal "I'm a child!"
+  (should (equal '("I'm a child!")
                  (gethash :text (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!"))
                                                                    0)))))
 
@@ -121,7 +121,7 @@
 
 
 (ert-deftest second-child-block-single-line-text ()
-  (should (equal "I'm the younger, forgotten child."
+  (should (equal '("I'm the younger, forgotten child.")
                  (gethash :text (org-structure/get-nested-children (car (org-structure "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                    1)))))
 
@@ -145,7 +145,7 @@
 
 
 (ert-deftest third-nested-child-block-single-line-text ()
-  (should (equal "this is the other test grandchild."
+  (should (equal '("this is the other test grandchild.")
                  (gethash :text
                           (org-structure/get-nested-children (elt (org-structure "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                   1)
@@ -1101,11 +1101,11 @@
 
 
 (ert-deftest convert-text-block/simple-headline-text ()
-  (should (equal "whatever"
+  (should (equal '("whatever")
                  (gethash :text (org-structure/convert-text-block '("* whatever"))))))
 
 (ert-deftest convert-text-block/simple-headline-text-ignoring-body ()
-  (should (equal "whatever"
+  (should (equal '("whatever")
                  (gethash :text (org-structure/convert-text-block '("* whatever\nbody to ignore"))))))
 
 (ert-deftest convert-text-block/simple-headline-body ()
@@ -1124,7 +1124,7 @@
   (should-not (gethash :children (org-structure/convert-text-block '("* whatever")))))
 
 (ert-deftest convert-text-block/nested-headline-text ()
-  (should (equal "whatever"
+  (should (equal '("whatever")
                  (gethash :text (org-structure/convert-text-block '("* whatever" ("** nested")))))))
 
 (ert-deftest convert-text-block/nested-headline-bullet-type ()
@@ -1136,7 +1136,7 @@
                  (length (gethash :children (org-structure/convert-text-block '("* whatever" ("** nested"))))))))
 
 (ert-deftest convert-text-block/nested-headline-child-text ()
-  (should (equal "nested here!"
+  (should (equal '("nested here!")
                  (gethash :text
                           (org-structure/get-nested-children (org-structure/convert-text-block '("* whatever" ("** nested here!")))
                                                              0)))))
@@ -1158,27 +1158,27 @@
 
 
 (ert-deftest get-text/headline-plain-text ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "* I'm the text"))))
 
 (ert-deftest get-text/plain-list-plain-text ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "- I'm the text"))))
 
 (ert-deftest get-text/headline-plain-text-with-body ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "** I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-text/plain-list-plain-text-with-body ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "- I'm the text\nbut I'm the body"))))
 
 (ert-deftest get-text/headline-plain-text-with-multiline-body ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "* I'm the text\nbut I'm the body\nand so am I."))))
 
 (ert-deftest get-text/plain-list-plain-text-with-multiline-body ()
-  (should (equal "I'm the text"
+  (should (equal '("I'm the text")
                  (org-structure/get-text "- I'm the text\nbut I'm the body\nand so am I."))))
 
 (ert-deftest get-text/headline-with-link ()
