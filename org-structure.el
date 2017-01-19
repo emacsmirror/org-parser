@@ -6,6 +6,9 @@
 
 ;;;zck should I replace all ^ in regexp with \\`?
 
+(require 'seq)
+(require 'subr-x)
+(require 'cl)
 
 (defun org-structure-buffer (buffer)
   "Return the org structure of BUFFER."
@@ -138,7 +141,7 @@ Possible :type values are :link."
           (if (string-empty-p text-before-link)
               (cons link-hash
                     (org-structure/parse-for-markup text-after-link))
-            (list* text-before-link
+            (cl-list* text-before-link
                    link-hash
                    (org-structure/parse-for-markup text-after-link))))
       (unless (string-empty-p text) (list text)))))
