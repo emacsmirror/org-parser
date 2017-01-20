@@ -1,4 +1,11 @@
-;;; org-structure.el -- parse org files to give an appropriate structure.
+;;; org-structure.el --- parse org files to give an appropriate structure.
+
+;; Copyright (C) 2016-2017 Zachary Kanfer
+
+;; This file is not part of GNU Emacs.
+
+;; Keywords: languages
+;; Homepage: http://example.com/foo
 
 ;;; Commentary:
 
@@ -8,7 +15,7 @@
 
 (require 'seq)
 (require 'subr-x)
-(require 'cl)
+(require 'cl-lib)
 
 (defun org-structure-buffer (buffer)
   "Return the org structure of BUFFER."
@@ -367,8 +374,8 @@ Each element of BODY-LIST should be a list itself."
       structure
     (apply #'org-structure/get-nested-children
            (elt (gethash :children structure)
-                (first children-indices))
-           (rest children-indices))))
+                (cl-first children-indices))
+           (cl-rest children-indices))))
 
 (defun org-structure/get-bullet (text)
   "Get the bullet form from TEXT, including the space after.
