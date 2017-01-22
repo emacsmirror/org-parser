@@ -391,4 +391,6 @@ If TEXT does not start with a bullet form, this will error."
          (match-string 1 text))
         (t (error "Error calling org-structure/get-bullet on a string that doesn't have bullets"))))
 
+(provide 'org-structure)
+
 ;;; org-structure.el ends here
