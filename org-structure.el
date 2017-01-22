@@ -1,5 +1,7 @@
 ;;; org-structure.el --- parse org files to give an appropriate structure.
 
+;; Version: 0.1
+
 ;; Copyright (C) 2016-2017 Zachary Kanfer
 
 ;; This file is not part of GNU Emacs.
