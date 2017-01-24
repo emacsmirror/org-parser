@@ -17,22 +17,18 @@
 (require 'subr-x)
 (require 'cl-lib)
 
-(defun org-parser-buffer (buffer)
+(defun org-parser/parse-buffer (buffer)
   "Return the org structure of BUFFER."
   (with-current-buffer buffer
-    (org-parser (buffer-string))))
+    (org-parser/parse-text (buffer-string))))
 
-(defun org-parser-file (filename)
+(defun org-parser/parse-file (filename)
   "Return the org structure of FILENAME."
   (with-temp-buffer
     (insert-file-contents filename)
-    (org-parser-buffer (current-buffer))))
+    (org-parser/parse-buffer (current-buffer))))
 
-;; (defun org-parser (text)
-;;   "Return the org structure of TEXT."
-;;   (org-parser/parse text (org-parser/guess-level text)))
-
-(defun org-parser (text)
+(defun org-parser/parse-text (text)
   "Return the org structure of TEXT."
   (org-parser/convert-text-tree (org-parser/make-text-tree (org-parser/split-into-blocks (substring-no-properties text)))))
 

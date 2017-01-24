@@ -9,25 +9,25 @@
 
 (ert-deftest single-line-has-only-one-block ()
   (should (equal 1
-                 (length (org-parser "* header")))))
+                 (length (org-parser/parse-text "* header")))))
 
 (ert-deftest single-line-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser "* header"))))))
+                 (gethash :text (car (org-parser/parse-text "* header"))))))
 
 (ert-deftest single-line-children ()
-  (should-not (gethash :children (car (org-parser "* header")))))
+  (should-not (gethash :children (car (org-parser/parse-text "* header")))))
 
 (ert-deftest single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser "* header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "* header"))))))
 
 (ert-deftest single-plain-list-has-only-one-block ()
   (should (equal 1
-                 (length (org-parser "- header")))))
+                 (length (org-parser/parse-text "- header")))))
 
 (ert-deftest single-line-with-link-text-before-link ()
-  (let ((text (gethash :text (first (org-parser "* here is [[http://zck.me/][my site]]")))))
+  (let ((text (gethash :text (first (org-parser/parse-text "* here is [[http://zck.me/][my site]]")))))
     (should (listp text))
     (should (equal 2
                    (length text)))
@@ -39,7 +39,7 @@
     (should (equal "my site" (gethash :text (second text))))))
 
 (ert-deftest single-line-with-link-text-link-text ()
-  (let ((text (gethash :text (first (org-parser "* here is [[http://zck.me/][my site]]")))))
+  (let ((text (gethash :text (first (org-parser/parse-text "* here is [[http://zck.me/][my site]]")))))
     (should (listp text))
     (should (equal 2
                    (length text)))
@@ -52,86 +52,86 @@
 
 (ert-deftest single-plain-list-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser "- header"))))))
+                 (gethash :text (car (org-parser/parse-text "- header"))))))
 
 (ert-deftest single-plain-list-children ()
-  (should-not (gethash :children (car (org-parser "- header")))))
+  (should-not (gethash :children (car (org-parser/parse-text "- header")))))
 
 (ert-deftest single-plain-list-bullet-type ()
   (should (equal ?-
-                 (gethash :bullet-type (car (org-parser "- header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "- header"))))))
 
 (ert-deftest nested-headline-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser "** header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "** header"))))))
 
 (ert-deftest nested-plain-list-bullet-type ()
   (should (equal ?+
-                 (gethash :bullet-type (car (org-parser "   + header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "   + header"))))))
 
 (ert-deftest ordered-list-bullet-type ()
   (should (equal ?.
-                 (gethash :bullet-type (car (org-parser "14. header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "14. header"))))))
 
 (ert-deftest nested-ordered-list-bullet-type ()
   (should (equal ?.
-                 (gethash :bullet-type (car (org-parser "  3. header"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "  3. header"))))))
 
 (ert-deftest with-newline-single-line-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser "* header\n"))))))
+                 (gethash :text (car (org-parser/parse-text "* header\n"))))))
 
 (ert-deftest with-newline-single-line-children ()
-  (should-not (gethash :children (car (org-parser "* header\n")))))
+  (should-not (gethash :children (car (org-parser/parse-text "* header\n")))))
 
 (ert-deftest with-newline-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser "* header\n"))))))
+                 (gethash :bullet-type (car (org-parser/parse-text "* header\n"))))))
 
 
 (ert-deftest children-dont-create-new-block ()
   (should (equal 1
-                 (length (org-parser "* header\n** nested")))))
+                 (length (org-parser/parse-text "* header\n** nested")))))
 
 (ert-deftest two-children ()
   (should (equal 2
                  (length (gethash :children
-                                  (car (org-parser "* header\n** first child\n** second child")))))))
+                                  (car (org-parser/parse-text "* header\n** first child\n** second child")))))))
 
 (ert-deftest two-blocks ()
   (should (equal 2
-                 (length (org-parser "* header\n* nested")))))
+                 (length (org-parser/parse-text "* header\n* nested")))))
 
 
 
 (ert-deftest child-block-single-line-text ()
   (should (equal '("I'm a child!")
-                 (gethash :text (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!"))
+                 (gethash :text (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!"))
                                                                 0)))))
 
 (ert-deftest child-block-single-line-children ()
-  (should-not (gethash :children (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!"))
+  (should-not (gethash :children (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!"))
                                                                  0))))
 
 (ert-deftest child-block-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!"))
+                 (gethash :bullet-type (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!"))
                                                                        0)))))
 
 
 
 (ert-deftest second-child-block-single-line-text ()
   (should (equal '("I'm the younger, forgotten child.")
-                 (gethash :text (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                 (gethash :text (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                 1)))))
 
 (ert-deftest second-child-block-single-line-children ()
-  (should-not (gethash :children (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+  (should-not (gethash :children (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                  1))))
 
 (ert-deftest second-child-block-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (org-parser/get-nested-children (car (org-parser "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                 (gethash :bullet-type (org-parser/get-nested-children (car (org-parser/parse-text "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
                                                                        1)))))
 
 
@@ -139,7 +139,7 @@
 (ert-deftest thirdly-nested-child-blocks ()
   (should (equal 2
                  (length (gethash :children
-                                  (org-parser/get-nested-children (elt (org-parser "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                  (org-parser/get-nested-children (elt (org-parser/parse-text "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                        1)
                                                                   1))))))
 
@@ -147,14 +147,14 @@
 (ert-deftest third-nested-child-block-single-line-text ()
   (should (equal '("this is the other test grandchild.")
                  (gethash :text
-                          (org-parser/get-nested-children (elt (org-parser "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                          (org-parser/get-nested-children (elt (org-parser/parse-text "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                1)
                                                           1
                                                           1)))))
 
 (ert-deftest third-nested-child-block-single-line-children ()
   (should-not (gethash :children
-                       (org-parser/get-nested-children (elt (org-parser "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                       (org-parser/get-nested-children (elt (org-parser/parse-text "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                             1)
                                                        1
                                                        1))))
@@ -162,7 +162,7 @@
 (ert-deftest third-nested-child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type
-                          (org-parser/get-nested-children (elt (org-parser "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                          (org-parser/get-nested-children (elt (org-parser/parse-text "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
                                                                1)
                                                           1
                                                           1)))))
@@ -172,29 +172,29 @@
 (ert-deftest plain-child-lists-of-mixed-types-are-blocked-properly ()
   (should (equal 1
                  (length (gethash :children
-                                  (car (org-parser "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))))
+                                  (car (org-parser/parse-text "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))))
 
 (ert-deftest indented-ordered-lists-are-blocked-properly ()
   (should (equal 1
-                 (length (org-parser "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
+                 (length (org-parser/parse-text "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
 
 (ert-deftest lists-of-mixed-types-are-blocked-properly ()
   (should (equal 2
                  (length (gethash :children
-                                  (car (org-parser "* top\n- first level\n** also first level")))))))
+                                  (car (org-parser/parse-text "* top\n- first level\n** also first level")))))))
 
 (ert-deftest headline-with-body-text-has-correct-text ()
   (should (equal '(("I'm in the body"))
                  (gethash :body
-                          (car (org-parser "* I'm the headline\nI'm in the body"))))))
+                          (car (org-parser/parse-text "* I'm the headline\nI'm in the body"))))))
 
 (ert-deftest headline-multiline-body ()
   (should (equal '(("first line") ("second line"))
                  (gethash :body
-                          (car (org-parser "* ignored headline\nfirst line\nsecond line"))))))
+                          (car (org-parser/parse-text "* ignored headline\nfirst line\nsecond line"))))))
 
 (ert-deftest headline-body-with-link ()
-  (let ((body (gethash :body (car (org-parser "* ignored headline\nhere's a body with [[http://example.com][a link!]]")))))
+  (let ((body (gethash :body (car (org-parser/parse-text "* ignored headline\nhere's a body with [[http://example.com][a link!]]")))))
     (should (equal 1
                    (length body)))
     (should (equal 2
@@ -210,11 +210,11 @@
 
 (ert-deftest headline-with-body-text-has-no-siblings ()
   (should (equal 1
-                 (length (org-parser "* I'm the headline\nI'm in the body")))))
+                 (length (org-parser/parse-text "* I'm the headline\nI'm in the body")))))
 
 (ert-deftest headline-with-body-text-has-no-children ()
   (should (equal 0
-                 (length (gethash :children (car (org-parser "* I'm the headline\nI'm in the body")))))))
+                 (length (gethash :children (car (org-parser/parse-text "* I'm the headline\nI'm in the body")))))))
 
 
 ;;;; get-bullet tests
@@ -579,100 +579,100 @@
 ;;;; tests that go all the way around -- from a string to a structure to the original string
 (ert-deftest to-structure-to-string/just-one-block ()
   (should (equal "* header\n"
-                 (org-parser/to-string (org-parser "* header\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\n")))))
 
 (ert-deftest to-structure-to-string/just-one-block-with-body ()
   (should (equal "* header\nwith body\n"
-                 (org-parser/to-string (org-parser "* header\nwith body\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\nwith body\n")))))
 
 (ert-deftest to-structure-to-string/just-one-block-with-multiline-body ()
   (should (equal "* header\nwith body\non two lines\n"
-                 (org-parser/to-string (org-parser "* header\nwith body\non two lines")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\nwith body\non two lines")))))
 
 (ert-deftest to-structure-to-string/simply-nested ()
   (should (equal "* header\n** nested\n"
-                 (org-parser/to-string (org-parser "* header\n** nested\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\n** nested\n")))))
 
 (ert-deftest to-structure-to-string/two-children ()
   (should (equal "* header\n** first child\n** second child\n"
-                 (org-parser/to-string (org-parser "* header\n** first child\n** second child\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\n** first child\n** second child\n")))))
 
 (ert-deftest to-structure-to-string/two-blocks ()
   (should (equal "* header\n* second\n"
-                 (org-parser/to-string (org-parser "* header\n* second\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\n* second\n")))))
 
 (ert-deftest to-structure-to-string/three-levels ()
   (should (equal "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n"
-                 (org-parser/to-string (org-parser "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.\n")))))
 
 (ert-deftest to-structure-to-string/lots-of-bullet-types ()
   (should (equal "* whatever\n** two\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces\n"
-                 (org-parser/to-string (org-parser "* whatever\n** two\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
+                 (org-parser/to-string (org-parser/parse-text "* whatever\n** two\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
 
 (ert-deftest to-structure-to-string/headline-then-plain-list ()
   (should (equal "* first thing\n+ nested thing\n"
-                 (org-parser/to-string (org-parser "* first thing\n+ nested thing\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* first thing\n+ nested thing\n")))))
 
 (ert-deftest to-structure-to-string/nested-headline-then-plain-list ()
   (should (equal "* first thing\n** nested headline\n+ nested thing\n"
-                 (org-parser/to-string (org-parser "* first thing\n** nested headline\n+ nested thing\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* first thing\n** nested headline\n+ nested thing\n")))))
 
 (ert-deftest to-structure-to-string/headline-then-double-nested-plain-list ()
   (should (equal "* first thing\n+ nested headline\n  + nested thing\n"
-                 (org-parser/to-string (org-parser "* first thing\n+ nested headline\n  + nested thing\n")))))
+                 (org-parser/to-string (org-parser/parse-text "* first thing\n+ nested headline\n  + nested thing\n")))))
 
 (ert-deftest to-structure-to-string/just-one-plain-list-plus ()
   (should (equal "+ header\n"
-                 (org-parser/to-string (org-parser "+ header\n")))))
+                 (org-parser/to-string (org-parser/parse-text "+ header\n")))))
 
 (ert-deftest to-structure-to-string/just-one-plain-list-dash ()
   (should (equal "- header\n"
-                 (org-parser/to-string (org-parser "- header\n")))))
+                 (org-parser/to-string (org-parser/parse-text "- header\n")))))
 
 (ert-deftest to-structure-to-string/just-one-ordered-list-period ()
   (should (equal "1. header\n"
-                 (org-parser/to-string (org-parser "1. header\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1. header\n")))))
 
 (ert-deftest to-structure-to-string/just-one-ordered-list-paren ()
   (should (equal "1) header\n"
-                 (org-parser/to-string (org-parser "1) header\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1) header\n")))))
 
 (ert-deftest to-structure-to-string/ordered-lists ()
   (should (equal "1. first\n2. second\n"
-                 (org-parser/to-string (org-parser "1. first\n2. second\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1. first\n2. second\n")))))
 
 (ert-deftest to-structure-to-string/plain-list-under-ordered ()
   (should (equal "1. thing\n   + yep, nested\n"
-                 (org-parser/to-string (org-parser "1. thing\n   + yep, nested\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1. thing\n   + yep, nested\n")))))
 
 (ert-deftest to-structure-to-string/plain-list-under-ordered ()
   (should (equal "1. thing\n   + yep, nested\n"
-                 (org-parser/to-string (org-parser "1. thing\n   + yep, nested\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1. thing\n   + yep, nested\n")))))
 
 (ert-deftest to-structure-to-string/long-ordered-list-with-child ()
   (should (equal "1. thing\n2. thing\n3. thing\n4. thing\n5. thing\n6. thing\n7. thing\n8. thing\n9. thing\n10. thing\n    + yep, nested\n"
-                 (org-parser/to-string (org-parser "1. thing\n2. thing\n3. thing\n4. thing\n5. thing\n6. thing\n7. thing\n8. thing\n9. thing\n10. thing\n    + yep, nested\n")))))
+                 (org-parser/to-string (org-parser/parse-text "1. thing\n2. thing\n3. thing\n4. thing\n5. thing\n6. thing\n7. thing\n8. thing\n9. thing\n10. thing\n    + yep, nested\n")))))
 
 
 (ert-deftest to-structure-to-string/link-in-headline ()
   (let ((input "* headline with [[http://example.com][link]]!\n"))
     (should (equal input
-                   (org-parser/to-string (org-parser input))))))
+                   (org-parser/to-string (org-parser/parse-text input))))))
 
 (ert-deftest to-structure-to-string/link-in-body ()
   (let ((input "* headline no link\nUntil the [[http://example.com][body]]!\n"))
     (should (equal input
-                   (org-parser/to-string (org-parser input))))))
+                   (org-parser/to-string (org-parser/parse-text input))))))
 
 (ert-deftest to-structure-to-string/link-in-nested-headline ()
   (let ((input "* headline\n** Second headline with [[http://example.com][a link]]!\n"))
     (should (equal input
-                   (org-parser/to-string (org-parser input))))))
+                   (org-parser/to-string (org-parser/parse-text input))))))
 
 (ert-deftest to-structure-to-string/link-in-ordered-list ()
   (let ((input "* headline\n1. Here's an ordered list\n2. With a [[http://bitbucket.org/zck/org-parser.el][link in the ordering]] with a bunch more text after\n"))
     (should (equal input
-                   (org-parser/to-string (org-parser input))))))
+                   (org-parser/to-string (org-parser/parse-text input))))))
 
 
 (ert-deftest format-text/basic-string ()
@@ -1474,10 +1474,10 @@
 
 (ert-deftest two-lines-on-second-level/only-one-child ()
   (should (equal 1
-                 (length (gethash :children (first (org-parser "* header\n** second level\nwith text")))))))
+                 (length (gethash :children (first (org-parser/parse-text "* header\n** second level\nwith text")))))))
 
 (ert-deftest two-lines-on-second-level/ ()
   (should (equal 1
-                 (length (gethash :children (first (org-parser "* header\n** second level\nwith text")))))))
+                 (length (gethash :children (first (org-parser/parse-text "* header\n** second level\nwith text")))))))
 
 ;;; tests.el ends here
