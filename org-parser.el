@@ -13,8 +13,6 @@
 
 ;;; Code:
 
-;;;zck should I replace all ^ in regexp with \\`?
-
 (require 'seq)
 (require 'subr-x)
 (require 'cl-lib)
@@ -65,9 +63,9 @@ and will probably work for plain lists.
 The situations where this breaks are where there have been multiple
 ordered lists in parents for TEXT, as the bullet for ordered lists
 is more than one character."
-  (cond ((string-match "^\\(\\*+\\) " text)
+  (cond ((string-match "\\`\\(\\*+\\) " text)
          (length (match-string 1 text)))
-        ((string-match "^\\(\s*\\)[-+[:digit:]]" text)
+        ((string-match "\\`\\(\s*\\)[-+[:digit:]]" text)
          (1+ (/ (length (match-string 1 text)) 2)))
         (t 1)))
 
@@ -78,11 +76,11 @@ is more than one character."
 For example, \"** \" has a bullet type of ?*.
 Plain lists are the leading symbol (+ or -).
 Ordered lists are ?. or ?)"
-  (cond ((string-match "^\\*+ " full-bullet)
+  (cond ((string-match "\\`\\*+ " full-bullet)
          ?*)
-        ((string-match "^\s*\\([+-]\\) " full-bullet)
+        ((string-match "\\`\s*\\([+-]\\) " full-bullet)
          (elt (match-string 1 full-bullet) 0))
-        ((string-match "^\s*[[:digit:]]+\\([.)]\\) " full-bullet)
+        ((string-match "\\`\s*[[:digit:]]+\\([.)]\\) " full-bullet)
          (elt (match-string 1 full-bullet) 0))))
 
 
