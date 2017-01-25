@@ -1,4 +1,4 @@
-;;; org-parser.el --- parse org files to give an appropriate structure.
+;;; org-parser.el --- parse org files into structured datatypes.
 
 ;; Version: 0.1
 
