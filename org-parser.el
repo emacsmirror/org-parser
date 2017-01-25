@@ -18,18 +18,18 @@
 (require 'cl-lib)
 
 (defun org-parser/parse-buffer (buffer)
-  "Return the org structure of BUFFER."
+  "Parse BUFFER into a list of structure items."
   (with-current-buffer buffer
     (org-parser/parse-text (buffer-string))))
 
 (defun org-parser/parse-file (filename)
-  "Return the org structure of FILENAME."
+  "Parse FILENAME into a list of structure items."
   (with-temp-buffer
     (insert-file-contents filename)
     (org-parser/parse-buffer (current-buffer))))
 
 (defun org-parser/parse-text (text)
-  "Return the org structure of TEXT."
+  "Parse TEXT into a list of structure items."
   (org-parser/convert-text-tree (org-parser/make-text-tree (org-parser/split-into-blocks (substring-no-properties text)))))
 
 (defun org-parser/split-into-blocks (text)
@@ -123,7 +123,7 @@ Return a single structure.  A structure has the following keywords:
          (match-string 1 text))))
 
 (defun org-parser/parse-for-markup (text)
-  "Convert TEXT into its structure, respecting markup.
+  "Parse TEXT into its structure, respecting markup.
 
 This handles things like links and italic text.
 
