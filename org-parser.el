@@ -23,8 +23,8 @@
 ;; Keywords: languages
 ;; Homepage: https://bitbucket.org/zck/org-parser.el
 
-;; Package-Requires: ((emacs "24.4"))
 
+;; Package-Requires: ((emacs "25.1"))
 ;;; Commentary:
 
 ;;; Code:
