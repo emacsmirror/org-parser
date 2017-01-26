@@ -35,7 +35,7 @@
 (defun org-parser/parse-buffer (buffer)
   "Parse BUFFER into a list of structure items."
   (with-current-buffer buffer
-    (org-parser/parse-text (buffer-string))))
+    (org-parser/parse-string (buffer-string))))
 
 ;;;###autoload
 (defun org-parser/parse-file (filename)
@@ -45,9 +45,9 @@
     (org-parser/parse-buffer (current-buffer))))
 
 ;;;###autoload
-(defun org-parser/parse-text (text)
-  "Parse TEXT into a list of structure items."
-  (org-parser/convert-text-tree (org-parser/make-text-tree (org-parser/split-into-blocks (substring-no-properties text)))))
+(defun org-parser/parse-string (string)
+  "Parse STRING into a list of structure items."
+  (org-parser/convert-text-tree (org-parser/make-text-tree (org-parser/split-into-blocks (substring-no-properties string)))))
 
 (defun org-parser/split-into-blocks (text)
   "Split TEXT into blocks; one block for each headline or plain list."
