@@ -117,7 +117,7 @@ Return a single structure.  A structure has the following keywords:
 
     Results in:
     '((\"This is the 'body', which can\") (\"continue to multiple lines.\"))
-:children -- a list of child blocks.
+:children -- a list of child structure objects.
 :bullet-type -- a character indicating the type of bullet used,
     either ?*, ?-, ?+, ?., or ?) .  For ordered lists --
     (either ?\) or ?.) -- this is the character /after/ the number.
