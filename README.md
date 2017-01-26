@@ -26,8 +26,6 @@ For example:
 ```
 Results in:
 `'((\"This is the 'body', which can\") (\"continue to multiple lines.\"))`
+
 * `:children` -- a list of child structure objects.
-* `:bullet-type` -- a character indicating the type of bullet used,
-    either ?*, ?-, ?+, ?., or ?) .  For ordered lists --
-    (either ?\) or ?.) -- this is the character /after/ the number.
-    For other types of blocks, the bullet is the entire number.
+* `:bullet-type` -- a character indicating the type of bullet used, either ?*, ?-, ?+, ?., or ?) .  For ordered lists -- (either ?\) or ?.) -- this is the character /after/ the number. For other types of blocks, the bullet is the entire number.
