@@ -1,4 +1,4 @@
-;;; org-parser.el --- parse org files into structured datatypes.
+;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
 
