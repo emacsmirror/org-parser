@@ -7,7 +7,7 @@
 ;; This file is not part of GNU Emacs.
 
 ;; Keywords: languages
-;; Homepage: http://example.com/foo
+;; Homepage: https://bitbucket.org/zck/org-parser.el
 
 ;;; Commentary:
 
