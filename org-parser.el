@@ -17,17 +17,20 @@
 (require 'subr-x)
 (require 'cl-lib)
 
+;;;###autoload
 (defun org-parser/parse-buffer (buffer)
   "Parse BUFFER into a list of structure items."
   (with-current-buffer buffer
     (org-parser/parse-text (buffer-string))))
 
+;;;###autoload
 (defun org-parser/parse-file (filename)
   "Parse FILENAME into a list of structure items."
   (with-temp-buffer
     (insert-file-contents filename)
     (org-parser/parse-buffer (current-buffer))))
 
+;;;###autoload
 (defun org-parser/parse-text (text)
   "Parse TEXT into a list of structure items."
   (org-parser/convert-text-tree (org-parser/make-text-tree (org-parser/split-into-blocks (substring-no-properties text)))))
