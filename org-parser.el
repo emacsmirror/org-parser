@@ -1,6 +1,7 @@
 ;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
+;; This file is not part of GNU Emacs.
 
 ;; Copyright (C) 2016-2017 Zachary Kanfer
 
@@ -18,13 +19,12 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-;; This file is not part of GNU Emacs.
-
-;; Keywords: languages
+;; Keywords: files, outlines, tools
 ;; Homepage: https://bitbucket.org/zck/org-parser.el
 
 
 ;; Package-Requires: ((emacs "25.1"))
+
 ;;; Commentary:
 
 ;;; Code:
