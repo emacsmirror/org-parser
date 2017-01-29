@@ -164,8 +164,8 @@ Possible :type values are :link."
               (cons link-hash
                     (org-parser--parse-for-markup text-after-link))
             (cl-list* text-before-link
-                   link-hash
-                   (org-parser--parse-for-markup text-after-link))))
+                      link-hash
+                      (org-parser--parse-for-markup text-after-link))))
       (unless (string-empty-p text) (list text)))))
 
 (defun org-parser--make-link-hash (target-text link-text)
@@ -212,7 +212,7 @@ a list or a string."
       (cons (cons first-line
                   (org-parser--make-text-tree first-block))
             (org-parser--make-text-tree (seq-drop lines
-                                                (+ 1 (length first-block))))))))
+                                                  (+ 1 (length first-block))))))))
 
 (defun org-parser--descendent-p (root possible-descendent)
   "Whether ROOT and POSSIBLE-DESCENDENT should be in the same block.
@@ -334,7 +334,7 @@ SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
                              this-bullet
                              (org-parser--format-text (gethash :text structure))))
          (children-text (org-parser--to-string-helper (gethash :children structure)
-                                                        this-bullet)))
+                                                      this-bullet)))
     (if (gethash :body structure)
         (format "%s\n%s\n%s"
                 title-line
