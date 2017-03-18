@@ -14,9 +14,24 @@ Each function returns a list of structure objects.
 
 ## Org structure objects
 
-A structure object represents a node in an org file. A structure has the following keywords:
+A structure object is a hash table that represents an item in an org file. A structure has the following keys:
 
 * `:text` -- the text on the first line of the block.
+* `:properties` -- the propreties of the block, as an alist. For example:
+```
+* this is the 'text'
+:PROPERTIES:
+:a key: And here's a value!
+:another key: Other thing.
+:END:
+```
+results in a properties alist of
+
+`'(("a key" . "And here's a value!")
+  ("another key" . "Other thing."))`
+  
+Note that the properties are in the alist are in the same order as the source org file.
+
 * `:body` -- the text on following lines of the block, as a list, where each line is represented by a list of items.
 For example:
 ```
@@ -27,5 +42,5 @@ For example:
 Results in:
 `'((\"This is the 'body', which can\") (\"continue to multiple lines.\"))`
 
-* `:children` -- a list of child structure objects.
-* `:bullet-type` -- a character indicating the type of bullet used, either `*`, `-`, `+`, `.`, or `)` .  For ordered lists (either `)` or `.`) this is the character /after/ the number. For headlines, `*`, even if the node the structure represents is nested, and has multiple asterisks.
+* `:children` -- a list of structure objects, one for each child of the original item. If there are no children, this will be `nil`.
+* `:bullet-type` -- a character indicating the type of bullet used, either `*`, `-`, `+`, `.`, or `)` .  For ordered lists (either `)` or `.`) this is the character /after/ the number. For headlines, `*`, even if the item the structure represents is nested, and has multiple asterisks.
