@@ -15,12 +15,34 @@
   (should (equal 1
                  (length (org-parser-parse-string "* header")))))
 
+(ert-deftest parse-string/headline-with-drawer-has-only-one-block ()
+  (should (equal 1
+                 (length (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+
 (ert-deftest parse-string/single-headline-text ()
   (should (equal '("header")
                  (gethash :text (car (org-parser-parse-string "* header"))))))
 
 (ert-deftest parse-string/single-headline-children ()
   (should-not (gethash :children (car (org-parser-parse-string "* header")))))
+
+(ert-deftest parse-string/drawers-are-not-children ()
+  (should-not (gethash :children (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+
+(ert-deftest parse-string/properties-are-not-body ()
+  (should-not (gethash :body (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+
+(ert-deftest parse-string/property-is-stored-separately ()
+  (should (equal '(("key" . "val"))
+                 (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
+
+(ert-deftest parse-string/properties-are-stored-separately ()
+  (should (equal '(("key" . "val")
+                   ("key2" . "value two"))
+                 (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n\n:key2: value two\n:END:\n"))))))
+
+(ert-deftest parse-string/drawers-are-separate ()
+  (should-not (gethash :children (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
 
 (ert-deftest parse-string/single-headline-bullet-type ()
   (should (equal ?*
@@ -560,22 +582,46 @@
                                                                      :children nil
                                                                      :bullet-type ?.)))))))
 
+;;zck should more of these be with #'org-parser-parse-string rather than a hash directly?
+(ert-deftest single-to-string/headline-only ()
+  (should (equal "* I'm just a headline\n"
+                 (org-parser--single-to-string (car (org-parser-parse-string "* I'm just a headline"))
+                                               ""
+                                               0))))
+
+(ert-deftest single-to-string/headline-properties-and-body ()
+  (should (equal "* I'm just a headline\n:PROPERTIES:\n:a key: value!\n:another key: stuff\n:END:\nhere a body\n"
+                 (org-parser--single-to-string (car (org-parser-parse-string "* I'm just a headline\n:PROPERTIES:\n:a key: value!\n:another key: stuff\n:END:\nhere a body\n"))
+                                               ""
+                                               0))))
 
 (ert-deftest single-to-string/headline-and-body ()
   (should (equal "* whatever\nHere's a body\n"
-                 (org-parser--single-to-string #s(hash-table data (:text "whatever"
-                                                                        :children nil
-                                                                        :bullet-type ?*
-                                                                        :body (("Here's a body"))))
+                 (org-parser--single-to-string (car (org-parser-parse-string "* whatever\nHere's a body\n"))
                                               ""
                                               0))))
 
+(ert-deftest single-to-string/two-nested-headlines ()
+  (should (equal "* first\n** second\n"
+                 (org-parser--single-to-string (car (org-parser-parse-string "* first\n** second\n"))
+                                               ""
+                                               0))))
+
+(ert-deftest single-to-string/three-nested-headlines ()
+  (should (equal "* first\n** second\n*** third\n"
+                 (org-parser--single-to-string (car (org-parser-parse-string "* first\n** second\n*** third\n"))
+                                               ""
+                                               0))))
+
+(ert-deftest single-to-string/nested-plain-lists ()
+  (should (equal "+ first thing\n  + second thing\n"
+                 (org-parser--single-to-string (car (org-parser-parse-string "+ first thing\n  + second thing\n"))
+                                               ""
+                                               0))))
+
 (ert-deftest single-to-string/headline-and-multiline-body ()
   (should (equal "* whatever\nHere's a body\non two lines\n"
-                 (org-parser--single-to-string #s(hash-table data (:text "whatever"
-                                                                        :children nil
-                                                                        :bullet-type ?*
-                                                                        :body (("Here's a body") ("on two lines"))))
+                 (org-parser--single-to-string (car (org-parser-parse-string "* whatever\nHere's a body\non two lines"))
                                               ""
                                               0))))
 
@@ -584,6 +630,10 @@
 (ert-deftest to-structure-to-string/just-one-block ()
   (should (equal "* header\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n")))))
+
+(ert-deftest to-structure-to-string/multiple-properties ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n")))))
 
 (ert-deftest to-structure-to-string/just-one-string ()
   (should (equal "No headline here\n"
@@ -717,30 +767,47 @@
   (should (equal "[[http://example.com][I'm a link!]]"
                  (org-parser--format-text-single-item (org-parser--make-link-hash "http://example.com" "I'm a link!")))))
 
+(ert-deftest format-properties/no-properties ()
+  (should-not (org-parser--format-properties nil)))
+
+(ert-deftest format-properties/one-property ()
+  (should (equal ":PROPERTIES:\n:my key: my value\n:END:\n"
+                 (org-parser--format-properties '(("my key" . "my value"))))))
+
+(ert-deftest format-properties/multiple-properties ()
+  (should (equal ":PROPERTIES:\n:my key: my value\n:another: THING!\n:END:\n"
+                 (org-parser--format-properties '(("my key" . "my value")
+                                                  ("another" . "THING!"))))))
+
+
+(ert-deftest format-body/no-line ()
+  (should-not (org-parser--format-body '())))
+
 (ert-deftest format-body/single-line ()
-  (should (equal "I'm a body!"
+  (should (equal "I'm a body!\n"
                  (org-parser--format-body '(("I'm a body!"))))))
 
 (ert-deftest format-body/two-lines ()
-  (should (equal "I'm a body\nAnd so am I!"
+  (should (equal "I'm a body\nAnd so am I!\n"
                  (org-parser--format-body '(("I'm a body")
                                            ("And so am I!"))))))
 
 (ert-deftest format-body/single-line-with-link ()
-  (should (equal "I've got [[http://example.com][a link]] inside me!"
+  (should (equal "I've got [[http://example.com][a link]] inside me!\n"
                  (org-parser--format-body (list (list "I've got "
                                                      (org-parser--make-link-hash "http://example.com"
                                                                                 "a link")
                                                      " inside me!"))))))
 
 (ert-deftest format-body/multiple-lines-with-link ()
-  (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!"
+  (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!\n"
                  (org-parser--format-body (list (list "One body line and then:")
                                                (list "I've got "
                                                      (org-parser--make-link-hash "http://example.com"
                                                                                 "a link")
                                                      " inside me!"))))))
 
+;;zck should this have an \n at the end? Maybe!
 (ert-deftest format-body-line/single-string ()
   (should (equal "Some text here"
                  (org-parser--format-body-line '("Some text here")))))
@@ -1249,6 +1316,9 @@
 (ert-deftest get-body/plain-list-plain-text ()
   (should-not (org-parser--get-body "- I'm the text")))
 
+(ert-deftest get-body/properties-arent-bodies ()
+  (should-not (org-parser--get-body "* a headline\n:PROPERTIES:\n:CATEGORY: sample-data\n:END:\n")))
+
 (ert-deftest get-body/headline-plain-text-with-body ()
   (should (equal '(("but I'm the body"))
                  (org-parser--get-body "* I'm the text\nbut I'm the body"))))
@@ -1273,6 +1343,33 @@
     (should (hash-table-p (second (first gotten-text))))
     (should (stringp (third (first gotten-text))))))
 
+
+(ert-deftest get-properties/no-properties ()
+  (should-not (org-parser--get-properties "* heading\nwith a body\n** and another heading\n- and a plain list")))
+
+(ert-deftest get-properties/single-property ()
+  (should (equal '(("clothing" . "pants"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n:clothing: pants\n:END:"))))
+
+(ert-deftest get-properties/single-property-with-spaces ()
+  (should (equal '(("things to wear" . "pants and stuff"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:END:"))))
+
+(ert-deftest get-properties/single-lowercase-property ()
+  (should (equal '(("things to wear" . "pants and stuff"))
+                 (org-parser--get-properties "* heading\n:properties:\n:things to wear: pants and stuff\n:end:"))))
+
+(ert-deftest get-properties/two-properties ()
+  (should (equal '(("things to wear" . "pants and stuff")
+                   ("color" . "forest green"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:color: forest green\n:END:"))))
+
+(ert-deftest extract-property-text/no-properties ()
+  (should-not (org-parser--extract-property-text "* headline\nand no properties. Not even at the end.")))
+
+(ert-deftest extract-property-text/some-properties ()
+  (should (equal ":things to wear: pants and stuff\n:color: forest green"
+                 (org-parser--extract-property-text "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:color: forest green\n:END:"))))
 
 
 (ert-deftest convert-text-tree/one-headline ()

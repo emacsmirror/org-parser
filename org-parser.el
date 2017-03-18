@@ -144,6 +144,7 @@ Properties of structure hashes:
             (text (car text-block)))
         (puthash :text (org-parser--get-text text) table)
         (puthash :body (org-parser--get-body text) table)
+        (puthash :properties (org-parser--get-properties text) table)
         (puthash :bullet-type (org-parser--bullet-type text) table)
         (puthash :children (org-parser--convert-text-tree (cdr text-block)) table)
         table)
@@ -205,15 +206,52 @@ This is a list of items."
 (defun org-parser--get-body (text)
   "Return the body of a given TEXT.
 
-This method will drop initial newlines of TEXT, then treat everything
-after a newline as the body.
+This method will drop initial newlines of TEXT, drop any properties,
+then treat everything after a newline as the body.
 
 The body is returned as a list, where each item in the list represents
 a line in TEXT.  Each line in TEXT is a list of items itself."
 
   (let ((lines (split-string text "\n" t)))
     (when (cdr lines)
-      (mapcar #'org-parser--parse-for-markup (cdr lines)))))
+      (mapcar #'org-parser--parse-for-markup
+              (if (string-collate-equalp ":PROPERTIES:"
+                                         (cl-second lines)
+                                         nil
+                                         t)
+                  (cdr (-drop-while (lambda (line) (not (string-collate-equalp ":END:" line nil t)))
+                                    (cddr lines)))
+                (cdr lines))))))
+
+(defun org-parser--get-properties (text)
+  "Return the properties of TEXT.
+
+Properties are an alist, where the key is the property key, and the
+value is the property value."
+  (let ((properties-alist nil)
+        (property-text (org-parser--extract-property-text text)))
+    (when property-text
+      (dolist (line (split-string property-text "\n" t))
+        (when (string-match ":\\(.*\\): \\(.*\\)"
+                            line)
+          (push (cons (match-string 1 line)
+                      (match-string 2 line))
+                properties-alist))))
+    (nreverse properties-alist)))
+
+(defun org-parser--extract-property-text (text)
+  "Extract the property text from TEXT.
+
+Property text is the text between :PROPERTIES: and :END: of a
+  string."
+  (let* ((begin-token "\n:PROPERTIES:\n")
+         (end-regexp "\n:END:\\(:?\n\\|$\\)")
+         (begin-match (string-match-p (regexp-quote begin-token) text))
+         (end-match (string-match-p end-regexp text begin-match)))
+    (when (and begin-match end-match)
+      (substring text
+                 (+ begin-match (length begin-token))
+                 end-match))))
 
 (defun org-parser--make-text-tree (blocks)
   "Organize BLOCKS, a list of text blocks, into the overall tree structure.
@@ -352,27 +390,25 @@ This should be identical to the org file parsed to create the structure."
 SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
   (cond ((hash-table-p structure)
          (let* ((this-bullet (org-parser--make-bullet structure parent-headline siblings-before-this-one))
-                (title-line (format "%s%s"
+                (title-line (format "%s%s\n" ;;zck extract to format-title-line
                                     this-bullet
                                     (org-parser--format-text (gethash :text structure))))
+                (body-text (org-parser--format-body (gethash :body structure)))
+                (properties-text (org-parser--format-properties (gethash :properties structure)))
                 (children-text (org-parser--to-string-helper (gethash :children structure)
                                                              this-bullet)))
-           (if (gethash :body structure)
-               (format "%s\n%s\n%s"
-                       title-line
-                       (org-parser--format-body (gethash :body structure))
-                       children-text)
-             (format "%s\n%s" title-line children-text))))
+           (concat title-line
+                   properties-text
+                   body-text
+                   children-text)))
         ((listp structure)
-
-         (concat (string-join (cl-mapcar (lambda (structure siblings-before-this-one)
-                                           (org-parser--single-to-string structure parent-headline siblings-before-this-one))
-                                         structure
-                                         (number-sequence 0
-                                                          (1- (length structure)))))
-                 "\n"))
+         (string-join (cl-mapcar (lambda (structure siblings-before-this-one)
+                                   (org-parser--single-to-string structure parent-headline siblings-before-this-one))
+                                 structure
+                                 (number-sequence 0
+                                                  (1- (length structure))))))
         ((stringp structure)
-         structure)))
+         (format "%s\n" structure))))
 
 (defun org-parser--format-text (structure-text)
   "Format STRUCTURE-TEXT into a string.
@@ -386,13 +422,26 @@ string that's the formatted representation of the list."
                          ;;should this add newlines between items? Probably not. But does that mean that if we have a structure object with a body with multiple things in it, what happens?
                          structure-text))))
 
+(defun org-parser--format-properties (properties-alist)
+  "Format PROPERTIES-ALIST into a string."
+  (when properties-alist
+    (format ":PROPERTIES:\n%s\n:END:\n"
+            (string-join (mapcar (lambda (ele)
+                                   (format ":%s: %s"
+                                           (car ele)
+                                           (cdr ele)))
+                                 properties-alist)
+                         "\n"))))
+
 (defun org-parser--format-body (body-list)
   "Format the body represented by BODY-LIST.
 
 Each element of BODY-LIST should be a list itself."
-  (string-join (mapcar #'org-parser--format-body-line
-                       body-list)
-               "\n"))
+  (when body-list
+    (concat (string-join (mapcar #'org-parser--format-body-line
+                                 body-list)
+                         "\n")
+            "\n")))
 
 (defun org-parser--format-body-line (body-line)
   "Format BODY-LINE into a string."
