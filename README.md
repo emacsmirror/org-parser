@@ -6,9 +6,9 @@ This project parses org files into structured datatypes.
 
 There are three methods that can be used to parse an org file.
 
-1. `org-parser/parse-buffer` -- This method parses a buffer as an org file.
-2. `org-parser/parse-file` -- This method parses an org file.
-3. `org-parser/parse-string` -- This method parses a string as an org file.
+1. `org-parser-parse-buffer` -- This method parses a buffer as an org file.
+2. `org-parser-parse-file` -- This method parses an org file.
+3. `org-parser-parse-string` -- This method parses a string as an org file.
 
 Each function returns a list of structure objects.
 
