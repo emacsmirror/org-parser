@@ -23,7 +23,7 @@
 ;; Homepage: https://bitbucket.org/zck/org-parser.el
 
 
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (dash "2.13.0"))
 
 ;;; Commentary:
 
