@@ -44,3 +44,21 @@ Results in:
 
 * `:children` -- a list of structure objects, one for each child of the original item. If there are no children, this will be `nil`.
 * `:bullet-type` -- a character indicating the type of bullet used, either `*`, `-`, `+`, `.`, or `)` .  For ordered lists (either `)` or `.`) this is the character /after/ the number. For headlines, `*`, even if the item the structure represents is nested, and has multiple asterisks.
+
+## Release History
+
+### 0.3
+
+* Parse properties drawers.
+
+### 0.2
+
+* Allow for the first line to not be a headline.
+* Rename to org-parser.
+* Better Emacs code style.
+* We now require Emacs 25.1 or greater.
+
+### 0.1
+
+* Initial release.
+* Work with headlines, plain lists.
