@@ -12,11 +12,13 @@ There are three methods that can be used to parse an org file.
 
 Each function returns a list of structure objects.
 
-## Org structure objects
+## Data objects
+
+### Org structure objects
 
 A structure object is a hash table that represents an item in an org file. A structure has the following keys:
 
-* `:text` -- the text on the first line of the block.
+* `:text` -- the text on the first line of the block. This is a list of text items.
 * `:properties` -- the propreties of the block, as an alist. For example:
 ```
 * this is the 'text'
@@ -32,7 +34,7 @@ results in a properties alist of
   
 Note that the properties are in the alist are in the same order as the source org file.
 
-* `:body` -- the text on following lines of the block, as a list, where each line is represented by a list of items.
+* `:body` -- the text on following lines of the block, as a list, where each line is represented by a list of text items.
 For example:
 ```
 * this is the 'text'
@@ -44,6 +46,26 @@ Results in:
 
 * `:children` -- a list of structure objects, one for each child of the original item. If there are no children, this will be `nil`.
 * `:bullet-type` -- a character indicating the type of bullet used, either `*`, `-`, `+`, `.`, or `)` .  For ordered lists (either `)` or `.`) this is the character /after/ the number. For headlines, `*`, even if the item the structure represents is nested, and has multiple asterisks.
+
+### Text items
+
+A text item is a string or a hash table representing some text. If the represented text has no properties, its text item is a string. If the text is a link, it's represented by a hash table.
+
+All text item hash tables have the key `:type`, which designates the type of text being represented. The only current possible `:type` is `:link`.
+
+#### Link text items
+
+Link text items have the following keys:
+
+* `:type` -- this is always `:link`.
+* `:target` -- the target of the link.
+* `:text` -- the text of the link.
+
+For example, this org link:
+
+    [[http://bitbucket.org/zck/org-parser.el][the org parser repository]]
+
+Results in a hash table with `:target` `"http://bitbucket.org/zck/org-parser.el"` and `:text` `"the org parser repository"`.
 
 ## Release History
 
