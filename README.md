@@ -32,7 +32,7 @@ results in a properties alist of
 `'(("a key" . "And here's a value!")
   ("another key" . "Other thing."))`
   
-Note that the properties are in the alist are in the same order as the source org file.
+Because properties and property values are strings, you can't use `#'alist-get`, but must use `#'assoc` to get properties here. Properties are in the alist are in the same order as the source org file.
 
 * `:body` -- the text on following lines of the block, as a list, where each line is represented by a list of text items.
 For example:
