@@ -1296,17 +1296,18 @@
   (let ((gotten-text (org-parser--get-text "* headline [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after")))
     (should (listp gotten-text))
     (should (equal 3 (length gotten-text)))
-    (should (stringp (first gotten-text)))
+    (should (equal "headline " (first gotten-text)))
     (should (hash-table-p (second gotten-text)))
-    (should (stringp (third gotten-text)))))
+    (should (equal " and text after" (third gotten-text)))))
 
 (ert-deftest get-text/headline-with-link-and-body ()
   (let ((gotten-text (org-parser--get-text "* headline [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after\nand more stuff")))
     (should (listp gotten-text))
     (should (equal 3 (length gotten-text)))
-    (should (stringp (first gotten-text)))
+    (should (equal "headline " (first gotten-text)))
     (should (hash-table-p (second gotten-text)))
-    (should (stringp (third gotten-text)))))
+    (should (equal " and text after"(third gotten-text)))))
+
 
 
 
