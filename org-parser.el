@@ -57,20 +57,38 @@
 A block is a single string (with newlines in it if necessary) that,
 optionally, begins with a headline or plain list, but otherwise has
 no headlines or plain lists in it."
-  (let ((current-block "")
-        (blocks nil))
-    (seq-do (lambda (line)
-              (if (org-parser--title-line-p line)
-                  (progn (unless (equal current-block "")
-                           (push current-block blocks))
-                         (setq current-block line))
-                (setq current-block
-                      (if (equal current-block "")
-                          line
-                        (format "%s\n%s" current-block line)))))
-            (split-string text "\n" t))
-    (push current-block blocks)
-    (reverse blocks)))
+  (when text
+    (org-parser--split-into-blocks-helper (split-string (string-remove-suffix "\n" text)
+                                                        "\n"))))
+
+(defun org-parser--split-into-blocks-helper (lines)
+  "Split LINES into blocks; one block for each headline or plain list.
+
+A block is a single string (with newlines in it if necessary) that,
+optionally, begins with a headline or plain list, but otherwise has
+no headlines or plain lists in it."
+  (when lines
+    (let* ((this-block-end (-find-index #'org-parser--title-line-p
+                                        (cl-rest lines)))
+           (next-block-start (if this-block-end
+                                 (1+ this-block-end)
+                               (length lines))))
+      (cons (string-join (seq-subseq lines 0 next-block-start)
+                         "\n")
+            (org-parser--split-into-blocks-helper (seq-subseq lines next-block-start))))))
+
+(defun org-parser--drop-single-empty-string-at-beginning-and-end (string-list)
+  "Drop a maximum of one empty string from each of the beginning and end of STRING-LIST."
+  (when string-list
+    (subseq string-list
+            (if (equal (cl-first string-list)
+                       "")
+                1
+              0)
+            (if (equal (-last-item string-list)
+                       "")
+                (1- (length string-list))
+              (length string-list)))))
 
 
 (defun org-parser--guess-level (text)
@@ -134,6 +152,9 @@ Properties of structure hashes:
 
     Results in:
     '((\"This is the 'body', which can\") (\"continue to multiple lines.\"))
+:properties -- the org properties of the block, as an association list
+of property-name to property-value. Each name and value is a string,
+so you can't use #'alist-get, but must use #'assoc.
 :children -- a list of child structure objects.
 :bullet-type -- a character indicating the type of bullet used,
     either ?*, ?-, ?+, ?., or ?) .  For ordered lists --
@@ -170,20 +191,25 @@ indicate what the type of the markup is.
 
 Possible :type values are :link."
   (let ((result-list nil))
-    (if (string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
-                      text)
-        (let* ((text-before-link (match-string 1 text))
-               (target-text (match-string 2 text))
-               (link-text (match-string 3 text))
-               (link-hash (org-parser--make-link-hash target-text link-text))
-               (text-after-link (match-string 4 text)))
-          (if (string-empty-p text-before-link)
-              (cons link-hash
-                    (org-parser--parse-for-markup text-after-link))
-            (cl-list* text-before-link
-                      link-hash
-                      (org-parser--parse-for-markup text-after-link))))
-      (unless (string-empty-p text) (list text)))))
+    (cond ((null text) nil)
+          ((string-empty-p text) (list ""))
+          ((string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
+                         text)
+           (let* ((text-before-link (match-string 1 text))
+                  (target-text (match-string 2 text))
+                  (link-text (match-string 3 text))
+                  (link-hash (org-parser--make-link-hash target-text link-text))
+                  (raw-text-after-link (match-string 4 text))
+                  (text-after-link (if (string-empty-p raw-text-after-link)
+                                       nil
+                                     raw-text-after-link)))
+             (if (string-empty-p text-before-link)
+                 (cons link-hash
+                       (org-parser--parse-for-markup text-after-link))
+               (cl-list* text-before-link
+                         link-hash
+                         (org-parser--parse-for-markup text-after-link)))))
+          (t (list text)))))
 
 (defun org-parser--make-link-hash (target-text link-text)
   "Make a link hash pointing to TARGET-TEXT with text LINK-TEXT.
@@ -212,7 +238,7 @@ then treat everything after a newline as the body.
 The body is returned as a list, where each item in the list represents
 a line in TEXT.  Each line in TEXT is a list of items itself."
 
-  (let ((lines (split-string text "\n" t)))
+  (let ((lines (org-parser--drop-single-empty-string-at-beginning-and-end (split-string text "\n"))))
     (when (cdr lines)
       (mapcar #'org-parser--parse-for-markup
               (if (string-collate-equalp ":PROPERTIES:"

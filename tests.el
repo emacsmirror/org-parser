@@ -214,6 +214,11 @@
                  (gethash :body
                           (car (org-parser-parse-string "* I'm the headline\nI'm in the body"))))))
 
+(ert-deftest blank-body-lines ()
+  (should (equal '(("Next is blank") ("") ("That was blank!"))
+                 (gethash :body
+                          (car (org-parser-parse-string "* Headline and now:\nNext is blank\n\nThat was blank!\n"))))))
+
 (ert-deftest headline-multiline-body ()
   (should (equal '(("first line") ("second line"))
                  (gethash :body
@@ -1000,6 +1005,10 @@
   (should (equal (list "I'm a headline")
                  (org-parser--parse-for-markup "I'm a headline"))))
 
+(ert-deftest parse-for-markup/empty-string ()
+  (should (equal (list "")
+                 (org-parser--parse-for-markup ""))))
+
 (ert-deftest parse-for-markup/only-a-link ()
   (let ((parsed (org-parser--parse-for-markup "[[http://zck.me/][my site]]")))
     (should (equal 1 (length parsed)))
@@ -1157,6 +1166,10 @@
   (should (equal '("nothing special here\nor here")
                  (org-parser--split-into-blocks "nothing special here\nor here"))))
 
+(ert-deftest split-into-blocks/leading-multiline-string-with-blank-line ()
+  (should (equal '("nothing special here\n\nor here")
+                 (org-parser--split-into-blocks "nothing special here\n\nor here"))))
+
 (ert-deftest split-into-blocks/leading-string-then-headline ()
   (should (equal '("nothing special here" "* but here's something")
                  (org-parser--split-into-blocks "nothing special here\n* but here's something"))))
@@ -1198,6 +1211,41 @@
   (should (equal '("- plain-list" "- another plain-list")
                  (org-parser--split-into-blocks "- plain-list\n- another plain-list"))))
 
+(ert-deftest split-into-blocks/empty-line-one-headline ()
+  (should (equal '("* headline\n\nwith things")
+                 (org-parser--split-into-blocks "* headline\n\nwith things"))))
+
+(ert-deftest split-into-blocks/empty-line-two-headlines ()
+  (should (equal '("* headline\n\nwith things" "* and another headline")
+                 (org-parser--split-into-blocks "* headline\n\nwith things\n* and another headline"))))
+
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/no-list ()
+  (should-not (org-parser--drop-single-empty-string-at-beginning-and-end '())))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/one-string ()
+  (should (equal '("hi")
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("hi")))))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/drop-front ()
+  (should (equal '("hi")
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("" "hi")))))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/drop-end ()
+  (should (equal '("hi")
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("hi" "")))))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/two-strings ()
+  (should (equal '("hi" " there")
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("hi" " there")))))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/one-empty-string-each-side ()
+  (should (equal '("hi" " there" )
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("" "hi" " there" "")))))
+
+(ert-deftest drop-single-empty-string-at-beginning-and-end/two-empty-strings-each-side ()
+  (should (equal '("" "hi" " there" "")
+                 (org-parser--drop-single-empty-string-at-beginning-and-end '("" "" "hi" " there" "" "")))))
 
 
 
@@ -1266,6 +1314,14 @@
 (ert-deftest convert-text-block/multiple-nested-children ()
   (should (equal 3
                  (length (gethash :children (org-parser--convert-text-block '("* whatever" ("** nested") ("** nested two") ("** nested three!"))))))))
+
+(ert-deftest convert-text-block/empty-line-in-body ()
+  (should (equal '(("Next is blank!")
+                   ("")
+                   ("That was blank!"))
+                 (gethash :body (org-parser--convert-text-block '("* Headline and now:\nNext is blank!\n\nThat was blank!"))))))
+
+
 
 
 (ert-deftest get-text/headline-plain-text ()
@@ -1343,6 +1399,12 @@
     (should (stringp (first (first gotten-text))))
     (should (hash-table-p (second (first gotten-text))))
     (should (stringp (third (first gotten-text))))))
+
+(ert-deftest get-body/empty-line-in-body ()
+  (should (equal '(("Next is blank!")
+                   ("")
+                   ("That was blank!"))
+                 (org-parser--get-body "* Headline and now:\nNext is blank!\n\nThat was blank!"))))
 
 
 (ert-deftest get-properties/no-properties ()
