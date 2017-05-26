@@ -359,6 +359,8 @@ indicating the bullet type."
 (defun org-parser--make-bullet (structure parent-bullet older-sibling-count)
   "Return the string representing the bullet for STRUCTURE.
 
+This bullet includes the whitespace after the bullet.
+
 PARENT-BULLET is used to determine indentation.
 
 There should be OLDER-SIBLING-COUNT siblings before this one.  This only matters for ordered lists."
