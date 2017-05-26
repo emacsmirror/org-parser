@@ -32,6 +32,7 @@
 (require 'seq)
 (require 'subr-x)
 (require 'cl-lib)
+(require 'dash)
 
 ;;;###autoload
 (defun org-parser-parse-buffer (buffer)
