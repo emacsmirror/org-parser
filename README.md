@@ -69,6 +69,8 @@ Results in a hash table with `:target` `"http://bitbucket.org/zck/org-parser.el"
 
 ## Release History
 
+### 0.4
+
 ### 0.3
 
 * Parse properties drawers.
