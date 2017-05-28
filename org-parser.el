@@ -167,6 +167,7 @@ so you can't use #'alist-get, but must use #'assoc.
         (puthash :text (org-parser--get-text text) table)
         (puthash :body (org-parser--get-body text) table)
         (puthash :properties (org-parser--get-properties text) table)
+        (puthash :tags (org-parser--get-tags text) table)
         (puthash :bullet-type (org-parser--bullet-type text) table)
         (puthash :children (org-parser--convert-text-tree (cdr text-block)) table)
         table)
@@ -180,6 +181,17 @@ so you can't use #'alist-get, but must use #'assoc.
          (match-string 1 text))
         ((string-match "\\` *[[:digit:]]+[.)] ?\\(\\(.\\|\n\\)+\\)" text)
          (match-string 1 text))))
+
+(defun org-parser--remove-tags (text)
+  "Return TEXT, a single line, without tags at the end.
+
+If TEXT has any tags, strip whitespace between the text and the
+tags.  If there are no tags, don't strip ending whitespace.
+
+The org manual says tags consist of \"letters, numbers, ‘_’, and ‘@’.\""
+  (replace-regexp-in-string "[ \t]+\\(:[[:alnum:]@_]+\\)+:$"
+                            ""
+                            text))
 
 (defun org-parser--parse-for-markup (text)
   "Parse TEXT into its structure, respecting markup.
@@ -226,9 +238,12 @@ It will have keys :target, :text, and :type.  The :type value will be :link."
   "Return the first line of TEXT without the bullet, parsed for org formatting.
 
 This is a list of items."
-  (let* ((text-without-bullet (org-parser--remove-bullet text))
-         (first-line-text (car (split-string text-without-bullet "\n" t))))
-    (org-parser--parse-for-markup first-line-text)))
+  (--> text
+       (org-parser--remove-bullet it)
+       (split-string it "\n" t)
+       (car it)
+       (org-parser--remove-tags it)
+       (org-parser--parse-for-markup it)))
 
 (defun org-parser--get-body (text)
   "Return the body of a given TEXT.
@@ -265,6 +280,19 @@ value is the property value."
                       (match-string 2 line))
                 properties-alist))))
     (nreverse properties-alist)))
+
+
+(defun org-parser--get-tags (text)
+  "Return the tags of TEXT, a string representing a block.
+
+The tags are returned as a list of strings.  The org manual says tags
+consist of \"letters, numbers, ‘_’, and ‘@’.\""
+  (let ((first-line (car (split-string text "\n"))))
+    (-some--> first-line
+              (string-match "[ \t]+\\(\\(?::[[:alnum:]@_]+\\)+\\):$"
+                            it)
+              (match-string 1 first-line)
+              (split-string it ":" t))))
 
 (defun org-parser--extract-property-text (text)
   "Extract the property text from TEXT.
@@ -419,9 +447,7 @@ This should be identical to the org file parsed to create the structure."
 SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
   (cond ((hash-table-p structure)
          (let* ((this-bullet (org-parser--make-bullet structure parent-headline siblings-before-this-one))
-                (title-line (format "%s%s\n" ;;zck extract to format-title-line
-                                    this-bullet
-                                    (org-parser--format-text (gethash :text structure))))
+                (title-line (org-parser--format-title-line structure this-bullet))
                 (body-text (org-parser--format-body (gethash :body structure)))
                 (properties-text (org-parser--format-properties (gethash :properties structure)))
                 (children-text (org-parser--to-string-helper (gethash :children structure)
@@ -438,6 +464,31 @@ SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
                                                   (1- (length structure))))))
         ((stringp structure)
          (format "%s\n" structure))))
+
+(defun org-parser--format-title-line (structure formatted-bullets)
+  "Format STRUCTURE's title line, including FORMATTED-BULLETS.
+
+This can't calculate FORMATTED-BULLETS because we don't pass in
+enough information to know how much to indent STRUCTURE."
+  (let ((pre-tags (format "%s%s"
+                         formatted-bullets
+                         (org-parser--format-text (gethash :text structure))))
+        (tags (string-join (gethash :tags structure)
+                           ":")))
+    (if (string-empty-p tags)
+        (format "%s\n"
+                pre-tags)
+      (format "%s%s:%s:\n"
+              pre-tags
+
+              ;;even if the text is very long, put in at least one space.
+              (make-string (max 1
+                                (- 77
+                                   (length pre-tags)
+                                   2 ;;the colons at the beginning and end of tags.
+                                   (length tags)))
+                           ?\s)
+              tags))))
 
 (defun org-parser--format-text (structure-text)
   "Format STRUCTURE-TEXT into a string.

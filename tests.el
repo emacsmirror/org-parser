@@ -41,6 +41,14 @@
                    ("key2" . "value two"))
                  (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n\n:key2: value two\n:END:\n"))))))
 
+(ert-deftest parse-string/tags-are-gotten-properly ()
+  (should (equal '("one_tag" "two@TAGS")
+                 (gethash :tags (car (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n"))))))
+
+(ert-deftest parse-string/text-doesnt-have-tags ()
+  (should (equal '("header")
+                 (gethash :text (car (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n"))))))
+
 (ert-deftest parse-string/drawers-are-separate ()
   (should-not (gethash :children (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
 
@@ -636,6 +644,36 @@
   (should (equal "* header\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n")))))
 
+(ert-deftest to-structure-to-string/single-headline-with-tag ()
+  (should (equal "* I'm text!                                                           :check:\n"
+                 (org-parser--to-string (org-parser-parse-string "* I'm text!                                                           :check:")))))
+
+(ert-deftest to-structure-to-string/single-long-headline-with-tag ()
+  (should (equal "* I'm text and I'm really really really really really really really long text! :check:another:\n"
+                 (org-parser--to-string (org-parser-parse-string "* I'm text and I'm really really really really really really really long text! :check:another:\n")))))
+
+(ert-deftest to-structure-to-string/single-headline-with-two-tags ()
+  (should (equal "* I'm text but not that long text!                            :check:another:\n"
+                 (org-parser--to-string (org-parser-parse-string "* I'm text but not that long text!                            :check:another:")))))
+
+(ert-deftest to-structure-to-string/multiple-headlines-with-tags ()
+  (should (equal "* I'm text but not that long text!                            :check:another:
+* no tag here :(
+* this is a thing                                                :checkpoint:\n"
+                 (org-parser--to-string (org-parser-parse-string "* I'm text but not that long text!                            :check:another:
+* no tag here :(
+* this is a thing                                                :checkpoint:")))))
+
+(ert-deftest to-structure-to-string/nested-headlines-with-tags ()
+  (should (equal "* I'm text but not that long text!                            :check:another:
+* no tag here :(
+** underneath with tag                                   :one:two:three:five:
+* this is a thing                                                :checkpoint:\n"
+                 (org-parser--to-string (org-parser-parse-string "* I'm text but not that long text!                            :check:another:
+* no tag here :(
+** underneath with tag                                   :one:two:three:five:
+* this is a thing                                                :checkpoint:\n")))))
+
 (ert-deftest to-structure-to-string/multiple-properties ()
   (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n")))))
@@ -740,6 +778,51 @@
   (let ((input "* headline\n1. Here's an ordered list\n2. With a [[http://bitbucket.org/zck/org-parser.el][link in the ordering]] with a bunch more text after\n"))
     (should (equal input
                    (org-parser--to-string (org-parser-parse-string input))))))
+
+
+(ert-deftest format-title-line/headline--no-tags ()
+  (should (equal "* headline here, no tags\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* headline here, no tags"))
+                                                "* "))))
+
+(ert-deftest format-title-line/plain-lists-dont-have-tags ()
+  (should (equal "- this is a single plain list\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "- this is a single plain list"))
+                                                "- "))))
+
+(ert-deftest format-title-line/headline--single-tag ()
+  (should (equal "* this is a thing                                                :checkpoint:\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* this is a thing                                                :checkpoint:"))
+                                                "* "))))
+
+(ert-deftest format-title-line/headline--two-tags ()
+  (should (equal "* I'm text!                                                     :check:pants:\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* I'm text!                                                     :check:pants:"))
+                                                "* "))))
+
+;;In these nested tests, --format-title-line takes non-nested
+;;structures as input becuase the structures don't actually know if
+;;they're nested or not.
+(ert-deftest format-title-line/nested-headline--two-tags ()
+  (should (equal "** This is a thing                                                  :one:two:\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* This is a thing                                                   :one:two:"))
+                                                "** "))))
+
+(ert-deftest format-title-line/nested-headline--no-tags ()
+  (should (equal "** I'm text!\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* I'm text!\n"))
+                                                "** "))))
+
+(ert-deftest format-title-line/nested-plain-list--plain-lists-dont-have-tags ()
+  (should (equal "  - I'm lonely.\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "- I'm lonely."))
+                                                "  - "))))
+
+(ert-deftest format-title-line/very-long-line--with-tag ()
+  (should (equal "* This is very long and it's very long and it's very long and it's very long :tag:anyway:\n"
+                 (org-parser--format-title-line (car (org-parser-parse-string "* This is very long and it's very long and it's very long and it's very long :tag:anyway:"))
+                                                "* "))))
+
 
 
 (ert-deftest format-text/basic-string ()
@@ -990,6 +1073,70 @@
 (ert-deftest remove-bullet/ordered-list-dont-need-space-after-bullet ()
   (should (equal "I'm text"
                  (org-parser--remove-bullet "7.I'm text"))))
+
+
+(ert-deftest remove-tags/no-tags ()
+  (should (equal "I'm text"
+                 (org-parser--remove-tags "I'm text"))))
+
+(ert-deftest remove-tags/no-tags-but-trailing-whitespace ()
+  (should (equal "I'm text    "
+                 (org-parser--remove-tags "I'm text    "))))
+
+(ert-deftest remove-tags/single-tag ()
+  (should (equal "I'm text"
+                 (org-parser--remove-tags "I'm text                :tag:"))))
+
+(ert-deftest remove-tags/tag-with-tab-before ()
+  (should (equal "I'm text"
+                 (org-parser--remove-tags "I'm text	:tag:"))))
+
+(ert-deftest remove-tags/tag-with-tab-and-then-spaces-before ()
+  (should (equal "I'm text"
+                 (org-parser--remove-tags "I'm text	    :tag:"))))
+
+(ert-deftest remove-tags/multiple-tags ()
+  (should (equal "I'm text"
+                 (org-parser--remove-tags "I'm text                :two:tags:"))))
+
+(ert-deftest remove-tags/similar-tag-in-middle-of-line ()
+  (should (equal "I'm text :but: not a tag"
+                 (org-parser--remove-tags "I'm text :but: not a tag"))))
+
+
+(ert-deftest get-tags/no-tags ()
+  (should-not (org-parser--get-tags "* I'm text")))
+
+(ert-deftest get-tags/single-tag ()
+  (should (equal (list "myTag")
+                 (org-parser--get-tags "* I'm text                :myTag:"))))
+
+(ert-deftest get-tags/single-tag-with-tab ()
+  (should (equal (list "huh")
+                 (org-parser--get-tags "* pants									:huh:
+"))))
+
+(ert-deftest get-tags/multiple-tags ()
+  (should (equal (list "two" "tags")
+                 (org-parser--get-tags "* I'm text                :two:tags:"))))
+
+(ert-deftest get-tags/single-tag-with-at-sign ()
+  (should (equal (list "my@Tag")
+                 (org-parser--get-tags "* I'm text                :my@Tag:"))))
+
+(ert-deftest get-tags/single-tag-with-underscore ()
+  (should (equal (list "my_tag")
+                 (org-parser--get-tags "* I'm text                :my_tag:"))))
+
+(ert-deftest get-tags/single-tag-with-at-signs-and-underscores ()
+  (should (equal (list "my@__T@g")
+                 (org-parser--get-tags "* I'm text                :my@__T@g:"))))
+
+(ert-deftest get-tags/similar-tag-in-middle-of-line ()
+  (should-not (org-parser--get-tags "* I'm text :but: not a tag")))
+
+(ert-deftest get-tags/get-tags-from-first-line ()
+  (should-not (org-parser--get-tags "* I'm text\n** I'm text     :with:tags:")))
 
 
 (ert-deftest make-link-hash/basic ()
@@ -1271,6 +1418,13 @@
   (should (equal '(("I'm a body!"))
                  (gethash :body (org-parser--convert-text-block '("* whatever\nI'm a body!"))))))
 
+(ert-deftest convert-text-block/simple-headline-no-tags ()
+  (should-not (gethash :tags (org-parser--convert-text-block '("* whatever\nI'm a body!")))))
+
+(ert-deftest convert-text-block/simple-headline-tags ()
+  (should (equal (list "a_tag" "@gain")
+                 (gethash :tags (org-parser--convert-text-block '("* whatever            :a_tag:@gain:\nI'm a body!"))))))
+
 (ert-deftest convert-text-block/simple-headline-multiple-line-body ()
   (should (equal '(("I'm a body!") ("And still I come"))
                  (gethash :body (org-parser--convert-text-block '("* whatever\nI'm a body!\nAnd still I come"))))))
@@ -1327,6 +1481,10 @@
 (ert-deftest get-text/headline-plain-text ()
   (should (equal '("I'm the text")
                  (org-parser--get-text "* I'm the text"))))
+
+(ert-deftest get-text/drop-tags ()
+  (should (equal '("Text only")
+                 (org-parser--get-text "* Text only                                                      :tag:here:\nand a body"))))
 
 (ert-deftest get-text/plain-list-plain-text ()
   (should (equal '("I'm the text")
