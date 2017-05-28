@@ -72,6 +72,7 @@ Results in a hash table with `:target` `"http://bitbucket.org/zck/org-parser.el"
 ### 0.3
 
 * Parse properties drawers.
+* Parse tags.
 
 ### 0.2
 
