@@ -41,6 +41,12 @@
                    ("key2" . "value two"))
                  (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n\n:key2: value two\n:END:\n"))))))
 
+;;zck test inserting a thing with leading spaces, but not using helm to do it. That might be messing up the insertion.
+(ert-deftest parse-string/leading-spaces-inserted-by-org-are-removed ()
+  :expected-result :failed
+  (should (equal '("z" . "y")
+                 (gethash :properties (car (org-parser-parse-string "* a thing\n:PROPERTIES:\n:z:        y\n:END:"))))))
+
 (ert-deftest parse-string/tags-are-gotten-properly ()
   (should (equal '("one_tag" "two@TAGS")
                  (gethash :tags (car (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n"))))))
