@@ -202,10 +202,12 @@ This will return a list of things.  Each thing in this list will be
 either a string (for no markup), or a hash, with a :type key to
 indicate what the type of the markup is.
 
-Possible :type values are :link."
+Possible :type values are :link, :block."
   (let ((result-list nil))
     (cond ((null text) nil)
           ((string-empty-p text) (list ""))
+          ((string-prefix-p "#+BEGIN_" text)
+           (org-parser--make-block text))
           ((string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
                          text)
            (let* ((text-before-link (match-string 1 text))
@@ -234,6 +236,19 @@ It will have keys :target, :text, and :type.  The :type value will be :link."
     (puthash :type :link link-hash)
     link-hash))
 
+(defun org-parser--make-block (text)
+  "Make a block from TEXT, some text representing a block.
+
+TEXT should have both the beginning #+BEGIN_whatever and the ending
+#+END_whatever lines."
+  (let ((block (make-hash-table)))
+    (when (string-match "^#\\+BEGIN_\\(\\w+\\) ?\\([^\n]*\\)\n\\(.*\\(\n.*\\)*\\)\n#\\+END_\\1\n?$" text)
+     (puthash :type :block block)
+     (puthash :block-type (match-string 1 text) block)
+     (puthash :arguments (match-string 2 text) block)
+     (puthash :body (match-string 3 text) block))
+    block))
+
 (defun org-parser--get-text (text)
   "Return the first line of TEXT without the bullet, parsed for org formatting.
 
@@ -252,11 +267,16 @@ This method will drop initial newlines of TEXT, drop any properties,
 then treat everything after a newline as the body.
 
 The body is returned as a list, where each item in the list represents
-a line in TEXT.  Each line in TEXT is a list of items itself."
+either a line in TEXT, or a #+BEGIN_ block.  Each line in TEXT is a
+list of items itself, and a block is just a hash."
 
-  (let ((lines (org-parser--drop-single-empty-string-at-beginning-and-end (split-string text "\n"))))
+
+  (let ((lines (org-parser--split-body-text-into-groups text)))
     (when (cdr lines)
+
+      ;;properties are not part of the body, so we drop properties
       (mapcar #'org-parser--parse-for-markup
+              ;;zck maybe keeping property lines together should be done in the split-body-text-into-groups.
               (if (string-collate-equalp ":PROPERTIES:"
                                          (cl-second lines)
                                          nil
@@ -264,6 +284,26 @@ a line in TEXT.  Each line in TEXT is a list of items itself."
                   (cdr (-drop-while (lambda (line) (not (string-collate-equalp ":END:" line nil t)))
                                     (cddr lines)))
                 (cdr lines))))))
+
+(defun org-parser--split-body-text-into-groups (body-text)
+  "Split BODY-TEXT into groups.
+
+Normally this is just on newlines, but blocks are multiline."
+  (let ((lines (org-parser--drop-single-empty-string-at-beginning-and-end (split-string body-text "\n")))
+        (result nil)
+        (cur-line nil))
+    (while lines
+      (let ((cur-line (pop lines)))
+        (when (or (string-prefix-p "#+BEGIN_" cur-line t)
+                  (string-prefix-p "#+NAME: " cur-line t))
+          (destructuring-bind (rest-of-block post-block-body-text) (-split-with (lambda (line) (not (string-prefix-p "#+END_" line)))
+                                                                              lines)
+            (setq cur-line (concat cur-line "\n" (string-join rest-of-block "\n")))
+            (setq lines post-block-body-text)
+            (when (string-prefix-p "#+END_" (car lines))
+              (setq cur-line (concat cur-line "\n" (pop lines))))))
+        (push cur-line result)))
+    (nreverse result)))
 
 (defun org-parser--get-properties (text)
   "Return the properties of TEXT.
@@ -523,22 +563,35 @@ Each element of BODY-LIST should be a list itself."
                          "\n")
             "\n")))
 
+;;zck rename body-line? It can be a line, or a block.
 (defun org-parser--format-body-line (body-line)
   "Format BODY-LINE into a string."
-  (string-join (mapcar #'org-parser--format-text-single-item
-                       body-line)))
+  (if (listp body-line)
+      (string-join (mapcar #'org-parser--format-text-single-item
+                           body-line))
+
+    ;;then single-item can handle it by itself.
+    (org-parser--format-text-single-item body-line)))
 
 (defun org-parser--format-text-single-item (structure-item)
   "Format STRUCTURE-ITEM, a string or hash, into a string."
   (cond ((stringp structure-item)
          structure-item)
-
-        ;;for now, assume it's a link. Obviously this will have to
-        ;;change later, for other types of structured text.
         ((hash-table-p structure-item)
-         (format "[[%s][%s]]"
-                 (gethash :target structure-item)
-                 (gethash :text structure-item)))
+         (case (gethash :type structure-item)
+           (:link (format "[[%s][%s]]"
+                          (gethash :target structure-item)
+                          (gethash :text structure-item)))
+           (:block (let ((block-type (gethash :block-type structure-item))
+                         (args (gethash :arguments structure-item)))
+                     (string-join (list (format "#+BEGIN_%s%s"
+                                                block-type
+                                                (if (and args (not (string-empty-p args)))
+                                                    (format " %s" args)
+                                                  ""))
+                                        (gethash :body structure-item)
+                                        (format "#+END_%s" block-type))
+                                  "\n")))))
         (t "")))
 
 

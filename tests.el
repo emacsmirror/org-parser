@@ -142,6 +142,20 @@
   (should (equal 2
                  (length (org-parser-parse-string "* header\n* nested")))))
 
+(ert-deftest parse-string/src-block ()
+  (let ((entire-block (car (org-parser-parse-string "* whatever\n#+BEGIN_SRC sh\n  pants\n  and other stuff!\n#+END_SRC"))))
+
+    (should (equal 1 (length (gethash :body entire-block))))
+
+    (should (hash-table-p (first (gethash :body entire-block))))
+    (let ((src-block (first (gethash :body entire-block))))
+      (should (equal :block
+                     (gethash :type src-block)))
+      (should (equal "SRC"
+                     (gethash :block-type src-block)))
+      (should (equal "  pants\n  and other stuff!"
+                     (gethash :body src-block))))))
+
 
 
 (ert-deftest child-block-single-line-text ()
@@ -544,7 +558,7 @@
 
 ;;;; to-string tests
 
-(ert-deftest to-string/just-one-block ()
+(ert-deftest to-string/just-one-headline ()
   (should (equal "* header\n"
                  (org-parser--to-string '(#s(hash-table data (:text "header"
                                                                    :children nil
@@ -646,7 +660,7 @@
 
 
 ;;;; tests that go all the way around -- from a string to a structure to the original string
-(ert-deftest to-structure-to-string/just-one-block ()
+(ert-deftest to-structure-to-string/just-one-headline ()
   (should (equal "* header\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n")))))
 
@@ -684,6 +698,22 @@
   (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n")))))
 
+(ert-deftest to-structure-to-string/headline-with-src-block ()
+  (should (equal "* headline here!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n"
+                 (org-parser--to-string (org-parser-parse-string "* headline here!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n")))))
+
+(ert-deftest to-structure-to-string/second-level-headline-with-src-block ()
+  (should (equal "* headline here!\n** another here!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n** and follows\n"
+                 (org-parser--to-string (org-parser-parse-string "* headline here!\n** another here!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n** and follows\n")))))
+
+(ert-deftest to-structure-to-string/headline-with-example-block ()
+  (should (equal "* headline here!\n#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE\n"
+                 (org-parser--to-string (org-parser-parse-string "* headline here!\n#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE\n")))))
+
+(ert-deftest to-structure-to-string/headline-with-src-block-and-other-text ()
+  (should (equal "* headline here!\nsome body text\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand now more!\nand more!\n"
+                 (org-parser--to-string (org-parser-parse-string "* headline here!\nsome body text\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand now more!\nand more!\n")))))
+
 (ert-deftest to-structure-to-string/just-one-string ()
   (should (equal "No headline here\n"
                  (org-parser--to-string (org-parser-parse-string "No headline here\n")))))
@@ -692,11 +722,11 @@
   (should (equal "No headline here\n* but here's one!\n"
                  (org-parser--to-string (org-parser-parse-string "No headline here\n* but here's one!\n")))))
 
-(ert-deftest to-structure-to-string/just-one-block-with-body ()
+(ert-deftest to-structure-to-string/just-one-headline-with-body ()
   (should (equal "* header\nwith body\n"
                  (org-parser--to-string (org-parser-parse-string "* header\nwith body\n")))))
 
-(ert-deftest to-structure-to-string/just-one-block-with-multiline-body ()
+(ert-deftest to-structure-to-string/just-one-headline-with-multiline-body ()
   (should (equal "* header\nwith body\non two lines\n"
                  (org-parser--to-string (org-parser-parse-string "* header\nwith body\non two lines")))))
 
@@ -708,7 +738,7 @@
   (should (equal "* header\n** first child\n** second child\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n** first child\n** second child\n")))))
 
-(ert-deftest to-structure-to-string/two-blocks ()
+(ert-deftest to-structure-to-string/two-headlines ()
   (should (equal "* header\n* second\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n* second\n")))))
 
@@ -784,6 +814,10 @@
   (let ((input "* headline\n1. Here's an ordered list\n2. With a [[http://bitbucket.org/zck/org-parser.el][link in the ordering]] with a bunch more text after\n"))
     (should (equal input
                    (org-parser--to-string (org-parser-parse-string input))))))
+
+(ert-deftest to-structure-to-string/headline-with-two-blocks ()
+  (should (equal "* headline here!\nsome body text\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand now more!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand more!\n"
+                 (org-parser--to-string (org-parser-parse-string "* headline here!\nsome body text\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand now more!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\nand more!\n")))))
 
 
 (ert-deftest format-title-line/headline--no-tags ()
@@ -861,6 +895,14 @@
   (should (equal "[[http://example.com][I'm a link!]]"
                  (org-parser--format-text-single-item (org-parser--make-link-hash "http://example.com" "I'm a link!")))))
 
+(ert-deftest format-text-single-item/src-block ()
+  (should (equal "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC"
+                 (org-parser--format-text-single-item (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC")))))
+
+(ert-deftest format-text-single-item/example-block ()
+  (should (equal "#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE"
+                 (org-parser--format-text-single-item (org-parser--make-block "#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE")))))
+
 (ert-deftest format-properties/no-properties ()
   (should-not (org-parser--format-properties nil)))
 
@@ -901,6 +943,21 @@
                                                                                 "a link")
                                                      " inside me!"))))))
 
+(ert-deftest format-body/src-block-only ()
+  (should (equal "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n"
+                 (org-parser--format-body (list (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n"))))))
+
+(ert-deftest format-body/example-block-only ()
+  (should (equal "#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE\n"
+                 (org-parser--format-body (list (org-parser--make-block "#+BEGIN_EXAMPLE\n  pants\n  and other things\n#+END_EXAMPLE\n"))))))
+
+(ert-deftest format-body/block-and-other-lines ()
+  (should (equal "text before!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\ntext after!\n"
+                 (org-parser--format-body (list (list "text before!")
+                                                (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC")
+                                                (list "text after!"))))))
+
+
 ;;zck should this have an \n at the end? Maybe!
 (ert-deftest format-body-line/single-string ()
   (should (equal "Some text here"
@@ -922,7 +979,11 @@
                                                                                "I'm a link")
                                                     " and I'm more text and "
                                                     (org-parser--make-link-hash "http://example.com"
-                                                                               "I'm another link"))))))
+                                                                                "I'm another link"))))))
+
+(ert-deftest format-body-line/block-only ()
+  (should (equal "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC"
+                 (org-parser--format-body-line (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n")))))
 
 
 
@@ -1205,6 +1266,42 @@
     (should (equal "http://zck.me/" (gethash :target (first parsed))))
     (should (equal :link (gethash :type (second parsed))))
     (should (equal "https://www.gnu.org/software/emacs/" (gethash :target (second parsed))))))
+
+(ert-deftest parse-for-markup/src-block ()
+  (let ((block (org-parser--parse-for-markup "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC")))
+    (should (hash-table-p block))
+    (should-not (gethash :name block))
+    (should (equal :block
+                   (gethash :type block)))
+    (should (equal "SRC"
+                   (gethash :block-type block)))
+    (should (equal "  pants\n  and other things"
+                   (gethash :body block)))))
+
+
+(ert-deftest make-block/basic ()
+  (let ((block (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC")))
+    (should (hash-table-p block))
+    (should (equal :block
+                   (gethash :type block)))
+    (should (equal "SRC"
+                   (gethash :block-type block)))
+    (should (equal "sh"
+                   (gethash :arguments block)))
+    (should (equal "  pants\n  and other things"
+                   (gethash :body block)))))
+
+(ert-deftest make-block/ending-newline ()
+  (let ((block (org-parser--make-block "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n")))
+    (should (hash-table-p block))
+    (should (equal :block
+                   (gethash :type block)))
+    (should (equal "SRC"
+                   (gethash :block-type block)))
+    (should (equal "sh"
+                   (gethash :arguments block)))
+    (should (equal "  pants\n  and other things"
+                   (gethash :body block)))))
 
 
 
@@ -1556,6 +1653,28 @@
   (should (equal '(("but I'm the body") ("and so am I."))
                  (org-parser--get-body "- I'm the text\nbut I'm the body\nand so am I."))))
 
+
+;;zck add a test with a #+NAME right before the body
+(ert-deftest get-body/blocks-are-parsed ()
+  (let ((gotten-body (org-parser--get-body "* headline\nwhatever\n#+BEGIN_SRC sh\n  pants\n#+END_SRC\nand after")))
+    (should (equal 3
+                   (length gotten-body)))
+    (should (equal '("whatever")
+                   (first gotten-body)))
+
+
+    (let ((block (second gotten-body)))
+      (should (hash-table-p block))
+      (should (equal :block
+                     (gethash :type block)))
+      (should (equal "SRC"
+                     (gethash :block-type block)))
+      (should (equal "  pants"
+                     (gethash :body block))))
+
+    (should (equal '("and after")
+                   (third gotten-body)))))
+
 (ert-deftest get-body/headline-with-link-in-body ()
   (let ((gotten-text (org-parser--get-body "* headline\nWith a body [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after")))
     (should (listp gotten-text))
@@ -1570,6 +1689,50 @@
                    ("That was blank!"))
                  (org-parser--get-body "* Headline and now:\nNext is blank!\n\nThat was blank!"))))
 
+(ert-deftest split-body-text-into-groups/one-line ()
+  (should (equal '("I'm just some text")
+                 (org-parser--split-body-text-into-groups "I'm just some text"))))
+
+(ert-deftest split-body-text-into-groups/trailing-newline ()
+  (should (equal '("I'm just some text")
+                 (org-parser--split-body-text-into-groups "I'm just some text\n"))))
+
+(ert-deftest split-body-text-into-groups/two-lines ()
+  (should (equal '("I'm just some text" "But on TWO lines!")
+                 (org-parser--split-body-text-into-groups "I'm just some text\nBut on TWO lines!\n"))))
+
+(ert-deftest split-body-text-into-groups/only-src-block ()
+  (should (equal '("#+BEGIN_SRC sh\n  pants\n#+END_SRC")
+                 (org-parser--split-body-text-into-groups "#+BEGIN_SRC sh\n  pants\n#+END_SRC"))))
+
+(ert-deftest split-body-text-into-groups/only-example-block ()
+  (should (equal '("#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE")
+                 (org-parser--split-body-text-into-groups "#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE"))))
+
+(ert-deftest split-body-text-into-groups/src-interspersed-with-text ()
+  (should (equal '("some text here!"
+                   "#+BEGIN_SRC sh\n  pants\n#+END_SRC"
+                   "and now more text")
+                 (org-parser--split-body-text-into-groups "some text here!\n#+BEGIN_SRC sh\n  pants\n#+END_SRC\nand now more text"))))
+
+(ert-deftest split-body-text-into-groups/example-interspersed-with-text ()
+  (should (equal '("some text here!"
+                   "#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE"
+                   "and now more text")
+                 (org-parser--split-body-text-into-groups "some text here!\n#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE\nand now more text"))))
+
+(ert-deftest split-body-text-into-groups/multiple-blocks-and-text ()
+  (should (equal '("some text here!"
+                   "#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE"
+                   "#+BEGIN_SRC sh\n  also\n  things\n  here\n#+END_SRC"
+                   "and now more text")
+                 (org-parser--split-body-text-into-groups "some text here!\n#+BEGIN_EXAMPLE sh\n  pants\n#+END_EXAMPLE\n#+BEGIN_SRC sh\n  also\n  things\n  here\n#+END_SRC\nand now more text"))))
+
+(ert-deftest split-body-text-into-groups/src-with-name-interspersed-with-text ()
+  (should (equal '("some text here!"
+                   "#+NAME: my-block\n#+BEGIN_SRC sh\n  pants\n#+END_SRC"
+                   "and now more text")
+                 (org-parser--split-body-text-into-groups "some text here!\n#+NAME: my-block\n#+BEGIN_SRC sh\n  pants\n#+END_SRC\nand now more text"))))
 
 (ert-deftest get-properties/no-properties ()
   (should-not (org-parser--get-properties "* heading\nwith a body\n** and another heading\n- and a plain list")))
