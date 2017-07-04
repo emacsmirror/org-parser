@@ -203,28 +203,27 @@ either a string (for no markup), or a hash, with a :type key to
 indicate what the type of the markup is.
 
 Possible :type values are :link, :block."
-  (let ((result-list nil))
-    (cond ((null text) nil)
-          ((string-empty-p text) (list ""))
-          ((string-prefix-p "#+BEGIN_" text)
-           (org-parser--make-block text))
-          ((string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
-                         text)
-           (let* ((text-before-link (match-string 1 text))
-                  (target-text (match-string 2 text))
-                  (link-text (match-string 3 text))
-                  (link-hash (org-parser--make-link-hash target-text link-text))
-                  (raw-text-after-link (match-string 4 text))
-                  (text-after-link (if (string-empty-p raw-text-after-link)
-                                       nil
-                                     raw-text-after-link)))
-             (if (string-empty-p text-before-link)
-                 (cons link-hash
-                       (org-parser--parse-for-markup text-after-link))
-               (cl-list* text-before-link
-                         link-hash
-                         (org-parser--parse-for-markup text-after-link)))))
-          (t (list text)))))
+  (cond ((null text) nil)
+        ((string-empty-p text) (list ""))
+        ((string-prefix-p "#+BEGIN_" text)
+         (org-parser--make-block text))
+        ((string-match "\\(.*?\\)\\[\\[\\([^][]+\\)\\]\\[\\([^][]+\\)\\]\\]\\(.*\\)"
+                       text)
+         (let* ((text-before-link (match-string 1 text))
+                (target-text (match-string 2 text))
+                (link-text (match-string 3 text))
+                (link-hash (org-parser--make-link-hash target-text link-text))
+                (raw-text-after-link (match-string 4 text))
+                (text-after-link (if (string-empty-p raw-text-after-link)
+                                     nil
+                                   raw-text-after-link)))
+           (if (string-empty-p text-before-link)
+               (cons link-hash
+                     (org-parser--parse-for-markup text-after-link))
+             (cl-list* text-before-link
+                       link-hash
+                       (org-parser--parse-for-markup text-after-link)))))
+        (t (list text))))
 
 (defun org-parser--make-link-hash (target-text link-text)
   "Make a link hash pointing to TARGET-TEXT with text LINK-TEXT.
