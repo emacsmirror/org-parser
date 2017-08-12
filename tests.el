@@ -32,9 +32,16 @@
 (ert-deftest parse-string/properties-are-not-body ()
   (should-not (gethash :body (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
 
+(ert-deftest parse-string/properties-with-leading-spaces-are-not-body ()
+  (should-not (gethash :body (car (org-parser-parse-string "* header\n :PROPERTIES:\n :key: val\n :END:\n")))))
+
 (ert-deftest parse-string/property-is-stored-separately ()
   (should (equal '(("key" . "val"))
                  (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
+
+(ert-deftest parse-string/property-with-leading-spaces-is-stored-separately ()
+  (should (equal '(("key" . "val"))
+                 (gethash :properties (car (org-parser-parse-string "* header\n  :PROPERTIES:\n   :key: val\n    :END:\n"))))))
 
 (ert-deftest parse-string/properties-are-stored-separately ()
   (should (equal '(("key" . "val")
@@ -697,6 +704,26 @@
 (ert-deftest to-structure-to-string/multiple-properties ()
   (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
                  (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n")))))
+
+(ert-deftest to-structure-to-string/multiple-properties-with-all-leading-spaces ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n :PROPERTIES:\n :key: val\n:another key here: a value\n :END:\n")))))
+
+(ert-deftest to-structure-to-string/multiple-properties-with-all-leading-spaces-and-text-after ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\nand stuff here\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n :PROPERTIES:\n :key: val\n:another key here: a value\n :END:\nand stuff here")))))
+
+(ert-deftest to-structure-to-string/multiple-properties-with-leading-spaces-beginning-drawer ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n :PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n")))))
+
+(ert-deftest to-structure-to-string/multiple-properties-with-leading-spaces-inside-drawer ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n :key: val\n:another key here: a value\n:END:\n")))))
+
+(ert-deftest to-structure-to-string/multiple-properties-with-leading-spaces-ending-drawer ()
+  (should (equal "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n:END:\n"
+                 (org-parser--to-string (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:another key here: a value\n :END:\n")))))
 
 (ert-deftest to-structure-to-string/headline-with-src-block ()
   (should (equal "* headline here!\n#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n"
@@ -1637,6 +1664,21 @@
 (ert-deftest get-body/properties-arent-bodies ()
   (should-not (org-parser--get-body "* a headline\n:PROPERTIES:\n:CATEGORY: sample-data\n:END:\n")))
 
+(ert-deftest get-body/property-and-body ()
+  (should (equal '(("I'm a body!"))
+                 (org-parser--get-body "* a headline\n:PROPERTIES:\n:CATEGORY: sample-data\n:END:\nI'm a body!\n"))))
+
+(ert-deftest get-body/property-and-indented-body ()
+  (should (equal '(("  I'm a body!"))
+                 (org-parser--get-body "* a headline\n:PROPERTIES:\n:CATEGORY: sample-data\n:END:\n  I'm a body!\n"))))
+
+(ert-deftest get-body/indented-property-and-indented-body ()
+  (should (equal '(("  I'm a body!"))
+                 (org-parser--get-body "* a headline\n  :PROPERTIES:\n  :CATEGORY: sample-data\n  :END:\n  I'm a body!\n"))))
+
+(ert-deftest get-body/properties-with-leading-spaces-arent-bodies ()
+  (should-not (org-parser--get-body "* a headline\n :PROPERTIES:\n:CATEGORY: sample-data\n:END:\n")))
+
 (ert-deftest get-body/headline-plain-text-with-body ()
   (should (equal '(("but I'm the body"))
                  (org-parser--get-body "* I'm the text\nbut I'm the body"))))
@@ -1741,6 +1783,22 @@
   (should (equal '(("clothing" . "pants"))
                  (org-parser--get-properties "* heading\n:PROPERTIES:\n:clothing: pants\n:END:"))))
 
+(ert-deftest get-properties/single-property-leading-space-opening-drawer ()
+  (should (equal '(("clothing" . "pants"))
+                 (org-parser--get-properties "* heading\n :PROPERTIES:\n:clothing: pants\n:END:"))))
+
+(ert-deftest get-properties/single-property-leading-space-in-drawer ()
+  (should (equal '(("clothing" . "pants"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n :clothing: pants\n:END:"))))
+
+(ert-deftest get-properties/single-property-leading-space-closing-drawer ()
+  (should (equal '(("clothing" . "pants"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n:clothing: pants\n :END:"))))
+
+(ert-deftest get-properties/single-property-all-leading-spaces ()
+  (should (equal '(("clothing" . "pants"))
+                 (org-parser--get-properties "* heading\n   :PROPERTIES:\n  :clothing: pants\n :END:"))))
+
 (ert-deftest get-properties/single-property-with-spaces ()
   (should (equal '(("things to wear" . "pants and stuff"))
                  (org-parser--get-properties "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:END:"))))
@@ -1760,6 +1818,22 @@
 (ert-deftest extract-property-text/some-properties ()
   (should (equal ":things to wear: pants and stuff\n:color: forest green"
                  (org-parser--extract-property-text "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:color: forest green\n:END:"))))
+
+(ert-deftest extract-property-text/some-properties-with-leading-spaces-all-around ()
+  (should (equal "  :things to wear: pants and stuff\n   :color: forest green"
+                 (org-parser--extract-property-text "* heading\n  :PROPERTIES:\n  :things to wear: pants and stuff\n   :color: forest green\n:END:"))))
+
+(ert-deftest extract-property-text/some-properties-with-leading-spaces-opening-drawer ()
+  (should (equal ":things to wear: pants and stuff\n:color: forest green"
+                 (org-parser--extract-property-text "* heading\n :PROPERTIES:\n:things to wear: pants and stuff\n:color: forest green\n:END:"))))
+
+(ert-deftest extract-property-text/some-properties-with-leading-spaces-in-drawer ()
+  (should (equal " :things to wear: pants and stuff\n:color: forest green"
+                 (org-parser--extract-property-text "* heading\n:PROPERTIES:\n :things to wear: pants and stuff\n:color: forest green\n:END:"))))
+
+(ert-deftest extract-property-text/some-properties-with-leading-spaces-closing-drawer ()
+  (should (equal ":things to wear: pants and stuff\n:color: forest green"
+                 (org-parser--extract-property-text "* heading\n:PROPERTIES:\n:things to wear: pants and stuff\n:color: forest green\n  :END:"))))
 
 
 (ert-deftest convert-text-tree/one-headline ()
