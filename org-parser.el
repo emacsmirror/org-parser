@@ -311,7 +311,7 @@ value is the property value."
         (property-text (org-parser--extract-property-text text)))
     (when property-text
       (dolist (line (split-string property-text "\n" t))
-        (when (string-match ":\\(.*\\): \\(.*\\)"
+        (when (string-match ":\\(.*\\):\s*\\(.*\\)"
                             line)
           (push (cons (match-string 1 line)
                       (match-string 2 line))
