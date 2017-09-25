@@ -1,6 +1,6 @@
 ;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
-;; Version: 0.3
+;; Version: 0.4
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright (C) 2016-2017 Zachary Kanfer
