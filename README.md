@@ -10,13 +10,19 @@ There are three methods that can be used to parse an org file.
 2. `org-parser-parse-file` -- This method parses an org file.
 3. `org-parser-parse-string` -- This method parses a string as an org file.
 
-Each function returns a list of structure objects.
+## Returned values
 
-## Data objects
+Parsing Org data returns a single hash with two keys: `:in-buffer-settings` and `:content`.
 
-### Org structure objects
+### In-buffer settings
 
-A structure object is a hash table that represents an item in an org file. A structure has the following keys:
+`:in-buffer-settings` corresponds to [Org's in-buffer settings](http://orgmode.org/manual/In_002dbuffer-settings.html#In_002dbuffer-settings), which are global settings for the file.
+
+### Content structure objects
+
+`:content` corresponds to the data in the file: the headlines, plain lists, etc. This data is represented by a list of structure objects.
+
+A structure object is a hash table that represents an item in an org file. A structure object has the following keys:
 
 * `:text` -- the text on the first line of the block. This is a list of text items.
 * `:properties` -- the propreties of the block, as an alist. For example:
@@ -70,6 +76,8 @@ Results in a hash table with `:target` `"http://bitbucket.org/zck/org-parser.el"
 ## Release History
 
 ### 0.4
+
+* The top-level returned value is now a hash table. Current keys are `:content` and `:in-buffer-settings`
 
 ### 0.3
 
