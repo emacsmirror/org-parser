@@ -4,75 +4,100 @@
 
 ;;; Code:
 
-
 ;;;; org structure tests
 
-(ert-deftest parse-string/single-line-string ()
+(require 'ht)
+
+(ert-deftest parse-string/return-is-right-type ()
+  (should (hash-table-p (org-parser-parse-string "hi there"))))
+
+(ert-deftest parse-string/single-line-string-content ()
   (should (equal '(("hi there"))
-                 (org-parser-parse-string "hi there"))))
+                 (gethash :content (org-parser-parse-string "hi there")))))
+
+(ert-deftest parse-string/single-line-string-no-in-buffer-settings ()
+  (should (equal '()
+                 (gethash :in-buffer-settings (org-parser-parse-string "* hi there")))))
+
+(ert-deftest parse-string/single-line-string-with-one-buffer-setting-check-settings ()
+  (should (equal '(("any-props" "yes-there-is!"))
+                 (gethash :in-buffer-settings (org-parser-parse-string "#+any-props: yes-there-is!\n* hi there")))))
+
+(ert-deftest parse-string/single-line-string-with-one-buffer-setting-check-content ()
+  (should (equal '("hi there")
+                 (gethash :text (first (gethash :content (org-parser-parse-string "#+any-props: yes-there-is!\n* hi there")))))))
+
+(ert-deftest parse-string/three-on-a-line ()
+  (should (equal '(("any-props" "yes" "there" "are"))
+                 (gethash :in-buffer-settings (org-parser-parse-string "#+any-props: yes there are")))))
+
+(ert-deftest parse-string/multiple-in-buffer-settings ()
+  (should (equal '(("any-props" "yes-there-is!")
+                   ("and-more" "Yes-more"))
+                 (gethash :in-buffer-settings (org-parser-parse-string "#+any-props: yes-there-is!\n#+and-more: Yes-more\n* hi there")))))
 
 (ert-deftest parse-string/single-headline-has-only-one-block ()
   (should (equal 1
-                 (length (org-parser-parse-string "* header")))))
+                 (length (gethash :content (org-parser-parse-string "* header"))))))
 
 (ert-deftest parse-string/headline-with-drawer-has-only-one-block ()
   (should (equal 1
-                 (length (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+                 (length (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
 
 (ert-deftest parse-string/single-headline-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser-parse-string "* header"))))))
+                 (gethash :text (car (gethash :content (org-parser-parse-string "* header")))))))
 
 (ert-deftest parse-string/single-headline-children ()
-  (should-not (gethash :children (car (org-parser-parse-string "* header")))))
+  (should-not (gethash :children (car (gethash :content (org-parser-parse-string "* header"))))))
 
 (ert-deftest parse-string/drawers-are-not-children ()
-  (should-not (gethash :children (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+  (should-not (gethash :children (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
 
 (ert-deftest parse-string/properties-are-not-body ()
-  (should-not (gethash :body (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+  (should-not (gethash :body (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
 
 (ert-deftest parse-string/properties-with-leading-spaces-are-not-body ()
-  (should-not (gethash :body (car (org-parser-parse-string "* header\n :PROPERTIES:\n :key: val\n :END:\n")))))
+  (should-not (gethash :body (car (gethash :content (org-parser-parse-string "* header\n :PROPERTIES:\n :key: val\n :END:\n"))))))
 
 (ert-deftest parse-string/property-is-stored-separately ()
   (should (equal '(("key" . "val"))
-                 (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
+                 (gethash :properties (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))))
 
 (ert-deftest parse-string/property-with-leading-spaces-is-stored-separately ()
   (should (equal '(("key" . "val"))
-                 (gethash :properties (car (org-parser-parse-string "* header\n  :PROPERTIES:\n   :key: val\n    :END:\n"))))))
+                 (gethash :properties (car (gethash :content (org-parser-parse-string "* header\n  :PROPERTIES:\n   :key: val\n    :END:\n")))))))
 
 (ert-deftest parse-string/properties-are-stored-separately ()
   (should (equal '(("key" . "val")
                    ("key2" . "value two"))
-                 (gethash :properties (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n\n:key2: value two\n:END:\n"))))))
+                 (gethash :properties (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n\n:key2: value two\n:END:\n")))))))
 
 (ert-deftest parse-string/leading-spaces-inserted-by-org-are-removed ()
   (should (equal '(("z" . "y"))
-                 (gethash :properties (car (org-parser-parse-string "* a thing\n:PROPERTIES:\n:z:        y\n:END:"))))))
+                 (gethash :properties (car (gethash :content (org-parser-parse-string "* a thing\n:PROPERTIES:\n:z:        y\n:END:")))))))
 
 (ert-deftest parse-string/tags-are-gotten-properly ()
   (should (equal '("one_tag" "two@TAGS")
-                 (gethash :tags (car (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n"))))))
+                 (gethash :tags (car (gethash :content (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n")))))))
 
 (ert-deftest parse-string/text-doesnt-have-tags ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n"))))))
+                 (gethash :text (car (gethash :content (org-parser-parse-string "* header                :one_tag:two@TAGS:\n** nested                :ignored:\n* back to normal                :also_ignored:\n")))))))
 
 (ert-deftest parse-string/drawers-are-separate ()
-  (should-not (gethash :children (car (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))
+  (should-not (gethash :children (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n"))))))
 
 (ert-deftest parse-string/single-headline-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser-parse-string "* header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "* header")))))))
 
 (ert-deftest parse-string/single-plain-list-has-only-one-block ()
   (should (equal 1
-                 (length (org-parser-parse-string "- header")))))
+                 (length (gethash :content (org-parser-parse-string "- header"))))))
 
 (ert-deftest parse-string/single-line-with-link-text-before-link ()
-  (let ((text (gethash :text (first (org-parser-parse-string "* here is [[http://zck.me/][my site]]")))))
+  (let ((text (gethash :text (first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
     (should (listp text))
     (should (equal 2
                    (length text)))
@@ -84,7 +109,7 @@
     (should (equal "my site" (gethash :text (second text))))))
 
 (ert-deftest parse-string/single-line-with-link-text-link-text ()
-  (let ((text (gethash :text (first (org-parser-parse-string "* here is [[http://zck.me/][my site]]")))))
+  (let ((text (gethash :text (first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
     (should (listp text))
     (should (equal 2
                    (length text)))
@@ -97,58 +122,58 @@
 
 (ert-deftest parse-string/single-plain-list-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser-parse-string "- header"))))))
+                 (gethash :text (car (gethash :content (org-parser-parse-string "- header")))))))
 
 (ert-deftest parse-string/single-plain-list-children ()
-  (should-not (gethash :children (car (org-parser-parse-string "- header")))))
+  (should-not (gethash :children (car (gethash :content (org-parser-parse-string "- header"))))))
 
 (ert-deftest parse-string/single-plain-list-bullet-type ()
   (should (equal ?-
-                 (gethash :bullet-type (car (org-parser-parse-string "- header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "- header")))))))
 
 (ert-deftest parse-string/nested-headline-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser-parse-string "** header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "** header")))))))
 
 (ert-deftest parse-string/nested-plain-list-bullet-type ()
   (should (equal ?+
-                 (gethash :bullet-type (car (org-parser-parse-string "   + header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "   + header")))))))
 
 (ert-deftest parse-string/ordered-list-bullet-type ()
   (should (equal ?.
-                 (gethash :bullet-type (car (org-parser-parse-string "14. header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "14. header")))))))
 
 (ert-deftest parse-string/nested-ordered-list-bullet-type ()
   (should (equal ?.
-                 (gethash :bullet-type (car (org-parser-parse-string "  3. header"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "  3. header")))))))
 
 (ert-deftest parse-string/with-newline-single-line-text ()
   (should (equal '("header")
-                 (gethash :text (car (org-parser-parse-string "* header\n"))))))
+                 (gethash :text (car (gethash :content (org-parser-parse-string "* header\n")))))))
 
 (ert-deftest parse-string/with-newline-single-line-children ()
-  (should-not (gethash :children (car (org-parser-parse-string "* header\n")))))
+  (should-not (gethash :children (car (gethash :content (org-parser-parse-string "* header\n"))))))
 
 (ert-deftest parse-string/with-newline-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (car (org-parser-parse-string "* header\n"))))))
+                 (gethash :bullet-type (car (gethash :content (org-parser-parse-string "* header\n")))))))
 
 
 (ert-deftest parse-string/children-dont-create-new-block ()
   (should (equal 1
-                 (length (org-parser-parse-string "* header\n** nested")))))
+                 (length (gethash :content (org-parser-parse-string "* header\n** nested"))))))
 
 (ert-deftest parse-string/two-children ()
   (should (equal 2
                  (length (gethash :children
-                                  (car (org-parser-parse-string "* header\n** first child\n** second child")))))))
+                                  (car (gethash :content (org-parser-parse-string "* header\n** first child\n** second child"))))))))
 
 (ert-deftest parse-string/two-blocks ()
   (should (equal 2
-                 (length (org-parser-parse-string "* header\n* nested")))))
+                 (length (gethash :content (org-parser-parse-string "* header\n* nested"))))))
 
 (ert-deftest parse-string/src-block ()
-  (let ((entire-block (car (org-parser-parse-string "* whatever\n#+BEGIN_SRC sh\n  pants\n  and other stuff!\n#+END_SRC"))))
+  (let ((entire-block (car (gethash :content (org-parser-parse-string "* whatever\n#+BEGIN_SRC sh\n  pants\n  and other stuff!\n#+END_SRC")))))
 
     (should (equal 1 (length (gethash :body entire-block))))
 
@@ -165,32 +190,32 @@
 
 (ert-deftest child-block-single-line-text ()
   (should (equal '("I'm a child!")
-                 (gethash :text (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!"))
+                 (gethash :text (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
                                                                 0)))))
 
 (ert-deftest child-block-single-line-children ()
-  (should-not (gethash :children (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!"))
+  (should-not (gethash :children (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
                                                                  0))))
 
 (ert-deftest child-block-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!"))
+                 (gethash :bullet-type (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
                                                                        0)))))
 
 
 
 (ert-deftest second-child-block-single-line-text ()
   (should (equal '("I'm the younger, forgotten child.")
-                 (gethash :text (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                 (gethash :text (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
                                                                 1)))))
 
 (ert-deftest second-child-block-single-line-children ()
-  (should-not (gethash :children (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+  (should-not (gethash :children (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
                                                                  1))))
 
 (ert-deftest second-child-block-single-line-bullet-type ()
   (should (equal ?*
-                 (gethash :bullet-type (org-parser--get-nested-children (car (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child."))
+                 (gethash :bullet-type (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
                                                                        1)))))
 
 
@@ -198,7 +223,7 @@
 (ert-deftest thirdly-nested-child-blocks ()
   (should (equal 2
                  (length (gethash :children
-                                  (org-parser--get-nested-children (elt (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                                  (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
                                                                        1)
                                                                   1))))))
 
@@ -206,14 +231,14 @@
 (ert-deftest third-nested-child-block-single-line-text ()
   (should (equal '("this is the other test grandchild.")
                  (gethash :text
-                          (org-parser--get-nested-children (elt (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                          (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
                                                                1)
                                                           1
                                                           1)))))
 
 (ert-deftest third-nested-child-block-single-line-children ()
   (should-not (gethash :children
-                       (org-parser--get-nested-children (elt (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                       (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
                                                             1)
                                                        1
                                                        1))))
@@ -221,7 +246,7 @@
 (ert-deftest third-nested-child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type
-                          (org-parser--get-nested-children (elt (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild.")
+                          (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
                                                                1)
                                                           1
                                                           1)))))
@@ -231,34 +256,34 @@
 (ert-deftest plain-child-lists-of-mixed-types-are-blocked-properly ()
   (should (equal 1
                  (length (gethash :children
-                                  (car (org-parser-parse-string "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))))
+                                  (car (gethash :content (org-parser-parse-string "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces"))))))))
 
 (ert-deftest indented-ordered-lists-are-blocked-properly ()
   (should (equal 1
-                 (length (org-parser-parse-string "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces")))))
+                 (length (gethash :content (org-parser-parse-string "* whatever\n1. what\n   - the /parent/ of this node is an ordered list, so there are *three* spaces"))))))
 
 (ert-deftest lists-of-mixed-types-are-blocked-properly ()
   (should (equal 2
                  (length (gethash :children
-                                  (car (org-parser-parse-string "* top\n- first level\n** also first level")))))))
+                                  (car (gethash :content (org-parser-parse-string "* top\n- first level\n** also first level"))))))))
 
 (ert-deftest headline-with-body-text-has-correct-text ()
   (should (equal '(("I'm in the body"))
                  (gethash :body
-                          (car (org-parser-parse-string "* I'm the headline\nI'm in the body"))))))
+                          (car (gethash :content (org-parser-parse-string "* I'm the headline\nI'm in the body")))))))
 
 (ert-deftest blank-body-lines ()
   (should (equal '(("Next is blank") ("") ("That was blank!"))
                  (gethash :body
-                          (car (org-parser-parse-string "* Headline and now:\nNext is blank\n\nThat was blank!\n"))))))
+                          (car (gethash :content (org-parser-parse-string "* Headline and now:\nNext is blank\n\nThat was blank!\n")))))))
 
 (ert-deftest headline-multiline-body ()
   (should (equal '(("first line") ("second line"))
                  (gethash :body
-                          (car (org-parser-parse-string "* ignored headline\nfirst line\nsecond line"))))))
+                          (car (gethash :content (org-parser-parse-string "* ignored headline\nfirst line\nsecond line")))))))
 
 (ert-deftest headline-body-with-link ()
-  (let ((body (gethash :body (car (org-parser-parse-string "* ignored headline\nhere's a body with [[http://example.com][a link!]]")))))
+  (let ((body (gethash :body (car (gethash :content (org-parser-parse-string "* ignored headline\nhere's a body with [[http://example.com][a link!]]"))))))
     (should (equal 1
                    (length body)))
     (should (equal 2
@@ -274,11 +299,11 @@
 
 (ert-deftest headline-with-body-text-has-no-siblings ()
   (should (equal 1
-                 (length (org-parser-parse-string "* I'm the headline\nI'm in the body")))))
+                 (length (gethash :content (org-parser-parse-string "* I'm the headline\nI'm in the body"))))))
 
 (ert-deftest headline-with-body-text-has-no-children ()
   (should (equal 0
-                 (length (gethash :children (car (org-parser-parse-string "* I'm the headline\nI'm in the body")))))))
+                 (length (gethash :children (car (gethash :content (org-parser-parse-string "* I'm the headline\nI'm in the body"))))))))
 
 
 ;;;; get-bullet tests
@@ -565,103 +590,120 @@
 
 (ert-deftest to-string/just-one-headline ()
   (should (equal "* header\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?*)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?*)))))))))
 
 (ert-deftest to-string/just-one-plain-list-dash ()
   (should (equal "- header\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?-)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?-)))))))))
 
 (ert-deftest to-string/just-one-plain-list-plus ()
   (should (equal "+ header\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?+)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?+)))))))))
 
 (ert-deftest to-string/just-one-ordered-list-period ()
   (should (equal "1. header\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?.)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?.)))))))))
 
 (ert-deftest to-string/just-one-ordered-list-paren ()
   (should (equal "1) header\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?\))))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?\))))))))))
 
 (ert-deftest to-string/two-headlines ()
   (should (equal "* header\n* header2\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?*))
-                                           #s(hash-table data (:text "header2"
-                                                                     :children nil
-                                                                     :bullet-type ?*)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?*))
+                                                          #s(hash-table data (:text "header2"
+                                                                                    :children nil
+                                                                                    :bullet-type ?*)))))))))
 
 (ert-deftest to-string/two-plain-lists ()
   (should (equal "+ header\n+ header2\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?+))
-                                           #s(hash-table data (:text "header2"
-                                                                     :children nil
-                                                                     :bullet-type ?+)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?+))
+                                                          #s(hash-table data (:text "header2"
+                                                                                    :children nil
+                                                                                    :bullet-type ?+)))))))))
 
 (ert-deftest to-string/two-ordered-lists ()
   (should (equal "1. header\n2. header2\n"
-                 (org-parser--to-string '(#s(hash-table data (:text "header"
-                                                                   :children nil
-                                                                   :bullet-type ?.))
-                                           #s(hash-table data (:text "header2"
-                                                                     :children nil
-                                                                     :bullet-type ?.)))))))
+                 (org-parser--to-string (ht (:content '(#s(hash-table data (:text "header"
+                                                                                  :children nil
+                                                                                  :bullet-type ?.))
+                                                          #s(hash-table data (:text "header2"
+                                                                                    :children nil
+                                                                                    :bullet-type ?.)))))))))
 
 ;;zck should more of these be with #'org-parser-parse-string rather than a hash directly?
 (ert-deftest single-to-string/headline-only ()
   (should (equal "* I'm just a headline\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* I'm just a headline"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* I'm just a headline")))
                                                ""
                                                0))))
 
 (ert-deftest single-to-string/headline-properties-and-body ()
   (should (equal "* I'm just a headline\n:PROPERTIES:\n:a key: value!\n:another key: stuff\n:END:\nhere a body\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* I'm just a headline\n:PROPERTIES:\n:a key: value!\n:another key: stuff\n:END:\nhere a body\n"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* I'm just a headline\n:PROPERTIES:\n:a key: value!\n:another key: stuff\n:END:\nhere a body\n")))
                                                ""
                                                0))))
 
 (ert-deftest single-to-string/headline-and-body ()
   (should (equal "* whatever\nHere's a body\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* whatever\nHere's a body\n"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* whatever\nHere's a body\n")))
                                               ""
                                               0))))
 
 (ert-deftest single-to-string/two-nested-headlines ()
   (should (equal "* first\n** second\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* first\n** second\n"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* first\n** second\n")))
                                                ""
                                                0))))
 
 (ert-deftest single-to-string/three-nested-headlines ()
   (should (equal "* first\n** second\n*** third\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* first\n** second\n*** third\n"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* first\n** second\n*** third\n")))
                                                ""
                                                0))))
 
 (ert-deftest single-to-string/nested-plain-lists ()
   (should (equal "+ first thing\n  + second thing\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "+ first thing\n  + second thing\n"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "+ first thing\n  + second thing\n")))
                                                ""
                                                0))))
 
 (ert-deftest single-to-string/headline-and-multiline-body ()
   (should (equal "* whatever\nHere's a body\non two lines\n"
-                 (org-parser--single-to-string (car (org-parser-parse-string "* whatever\nHere's a body\non two lines"))
+                 (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* whatever\nHere's a body\non two lines")))
                                               ""
                                               0))))
+
+
+(ert-deftest in-buffer-settings-to-string/empty ()
+  (should (equal ""
+                 (org-parser--in-buffer-settings-to-string nil))))
+
+(ert-deftest in-buffer-settings-to-string/single-setting ()
+  (should (equal "#+whatever: three"
+                 (org-parser--in-buffer-settings-to-string '(("whatever" "three"))))))
+
+(ert-deftest in-buffer-settings-to-string/two-settings ()
+  (should (equal "#+whatever: three\n#+second: yep!"
+                 (org-parser--in-buffer-settings-to-string '(("whatever" "three") ("second" "yep!"))))))
+
+(ert-deftest in-buffer-settings-to-string/single-setting-with-multiple-values ()
+  (should (equal "#+whatever: three and four"
+                 (org-parser--in-buffer-settings-to-string '(("whatever" "three" "and" "four"))))))
 
 
 ;;;; tests that go all the way around -- from a string to a structure to the original string
@@ -672,6 +714,18 @@
 (ert-deftest to-structure-to-string/single-headline-with-tag ()
   (should (equal "* I'm text!                                                           :check:\n"
                  (org-parser--to-string (org-parser-parse-string "* I'm text!                                                           :check:")))))
+
+(ert-deftest to-structure-to-string/single-in-buffer-setting-single-headline ()
+  (should (equal "#+any-props: yes-there-is!\n* hi there\n"
+                 (org-parser--to-string (org-parser-parse-string "#+any-props: yes-there-is!\n* hi there")))))
+
+(ert-deftest to-structure-to-string/single-in-buffer-setting-with-multiple-values-single-headline ()
+  (should (equal "#+any-props: yes there are\n* headline\n"
+                 (org-parser--to-string (org-parser-parse-string "#+any-props: yes there are\n* headline")))))
+
+(ert-deftest to-structure-to-string/multiple-in-buffer-settings-single-headline ()
+  (should (equal "#+any-props: yes-there-is!\n#+and-more: Yes-more\n* hi there\n"
+                 (org-parser--to-string (org-parser-parse-string "#+any-props: yes-there-is!\n#+and-more: Yes-more\n* hi there")))))
 
 (ert-deftest to-structure-to-string/single-long-headline-with-tag ()
   (should (equal "* I'm text and I'm really really really really really really really long text! :check:another:\n"
@@ -847,22 +901,22 @@
 
 (ert-deftest format-title-line/headline--no-tags ()
   (should (equal "* headline here, no tags\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* headline here, no tags"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* headline here, no tags")))
                                                 "* "))))
 
 (ert-deftest format-title-line/plain-lists-dont-have-tags ()
   (should (equal "- this is a single plain list\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "- this is a single plain list"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "- this is a single plain list")))
                                                 "- "))))
 
 (ert-deftest format-title-line/headline--single-tag ()
   (should (equal "* this is a thing                                                :checkpoint:\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* this is a thing                                                :checkpoint:"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* this is a thing                                                :checkpoint:")))
                                                 "* "))))
 
 (ert-deftest format-title-line/headline--two-tags ()
   (should (equal "* I'm text!                                                     :check:pants:\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* I'm text!                                                     :check:pants:"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* I'm text!                                                     :check:pants:")))
                                                 "* "))))
 
 ;;In these nested tests, --format-title-line takes non-nested
@@ -870,22 +924,22 @@
 ;;they're nested or not.
 (ert-deftest format-title-line/nested-headline--two-tags ()
   (should (equal "** This is a thing                                                  :one:two:\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* This is a thing                                                   :one:two:"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* This is a thing                                                   :one:two:")))
                                                 "** "))))
 
 (ert-deftest format-title-line/nested-headline--no-tags ()
   (should (equal "** I'm text!\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* I'm text!\n"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* I'm text!\n")))
                                                 "** "))))
 
 (ert-deftest format-title-line/nested-plain-list--plain-lists-dont-have-tags ()
   (should (equal "  - I'm lonely.\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "- I'm lonely."))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "- I'm lonely.")))
                                                 "  - "))))
 
 (ert-deftest format-title-line/very-long-line--with-tag ()
   (should (equal "* This is very long and it's very long and it's very long and it's very long :tag:anyway:\n"
-                 (org-parser--format-title-line (car (org-parser-parse-string "* This is very long and it's very long and it's very long and it's very long :tag:anyway:"))
+                 (org-parser--format-title-line (car (gethash :content (org-parser-parse-string "* This is very long and it's very long and it's very long and it's very long :tag:anyway:")))
                                                 "* "))))
 
 
@@ -1435,64 +1489,64 @@
 
 (ert-deftest split-into-blocks/leading-string ()
   (should (equal '("nothing special here")
-                 (org-parser--split-into-blocks "nothing special here"))))
+                 (org-parser--split-into-blocks '("nothing special here")))))
 
 (ert-deftest split-into-blocks/leading-multiline-string ()
-  (should (equal '("nothing special here\nor here")
-                 (org-parser--split-into-blocks "nothing special here\nor here"))))
+  (should (equal '("nothing special here\nalso not here")
+                 (org-parser--split-into-blocks '("nothing special here" "also not here")))))
 
 (ert-deftest split-into-blocks/leading-multiline-string-with-blank-line ()
   (should (equal '("nothing special here\n\nor here")
-                 (org-parser--split-into-blocks "nothing special here\n\nor here"))))
+                 (org-parser--split-into-blocks '("nothing special here" "" "or here")))))
 
 (ert-deftest split-into-blocks/leading-string-then-headline ()
   (should (equal '("nothing special here" "* but here's something")
-                 (org-parser--split-into-blocks "nothing special here\n* but here's something"))))
+                 (org-parser--split-into-blocks '("nothing special here" "* but here's something")))))
 
 (ert-deftest split-into-blocks/leading-multiline-string-then-headline ()
   (should (equal '("nothing special here\nor here" "* but here's something")
-                 (org-parser--split-into-blocks "nothing special here\nor here\n* but here's something"))))
+                 (org-parser--split-into-blocks '("nothing special here" "or here" "* but here's something")))))
 
 (ert-deftest split-into-blocks/single-headline ()
   (should (equal '("* headline")
-                 (org-parser--split-into-blocks "* headline\n"))))
+                 (org-parser--split-into-blocks '("* headline")))))
 
 (ert-deftest split-into-blocks/single-headline-with-text ()
   (should (equal '("* headline\nhere's some text")
-                 (org-parser--split-into-blocks "* headline\nhere's some text"))))
+                 (org-parser--split-into-blocks '("* headline" "here's some text")))))
 
 (ert-deftest split-into-blocks/two-headlines ()
   (should (equal '("* headline" "* another headline")
-                 (org-parser--split-into-blocks "* headline\n* another headline"))))
+                 (org-parser--split-into-blocks '("* headline" "* another headline")))))
 
 (ert-deftest split-into-blocks/nested-headlines ()
   (should (equal '("* headline" "** another headline")
-                 (org-parser--split-into-blocks "* headline\n** another headline"))))
+                 (org-parser--split-into-blocks '("* headline" "** another headline")))))
 
 (ert-deftest split-into-blocks/single-plain-list ()
-  (should (equal '("- plain-list")
-                 (org-parser--split-into-blocks "- plain-list\n"))))
+  (should (equal '("- plain-list\n")
+                 (org-parser--split-into-blocks '("- plain-list" "")))))
 
 (ert-deftest split-into-blocks/single-plain-list-with-text ()
   (should (equal '("- plain-list\nhere's some text")
-                 (org-parser--split-into-blocks "- plain-list\nhere's some text"))))
+                 (org-parser--split-into-blocks '("- plain-list" "here's some text")))))
 
 
 (ert-deftest split-into-blocks/two-plain-lists ()
   (should (equal '("- plain-list" "- another plain-list")
-                 (org-parser--split-into-blocks "- plain-list\n- another plain-list"))))
+                 (org-parser--split-into-blocks '("- plain-list" "- another plain-list")))))
 
 (ert-deftest split-into-blocks/nested-plain-lists ()
   (should (equal '("- plain-list" "- another plain-list")
-                 (org-parser--split-into-blocks "- plain-list\n- another plain-list"))))
+                 (org-parser--split-into-blocks '("- plain-list" "- another plain-list")))))
 
 (ert-deftest split-into-blocks/empty-line-one-headline ()
   (should (equal '("* headline\n\nwith things")
-                 (org-parser--split-into-blocks "* headline\n\nwith things"))))
+                 (org-parser--split-into-blocks '("* headline" "" "with things")))))
 
 (ert-deftest split-into-blocks/empty-line-two-headlines ()
   (should (equal '("* headline\n\nwith things" "* and another headline")
-                 (org-parser--split-into-blocks "* headline\n\nwith things\n* and another headline"))))
+                 (org-parser--split-into-blocks '("* headline" "" "with things" "* and another headline")))))
 
 
 (ert-deftest drop-single-empty-string-at-beginning-and-end/no-list ()
@@ -1522,6 +1576,33 @@
   (should (equal '("" "hi" " there" "")
                  (org-parser--drop-single-empty-string-at-beginning-and-end '("" "" "hi" " there" "" "")))))
 
+
+(ert-deftest get-in-buffer-settings/no-settings ()
+  (should-not (org-parser--get-in-buffer-settings '("* whatever"))))
+
+(ert-deftest get-in-buffer-settings/no-settings-then-stuff-then-setting ()
+  (should (equal '(("set" "ing"))
+                 (org-parser--get-in-buffer-settings '("* whatever" "#+set: ing")))))
+
+(ert-deftest get-in-buffer-settings/one-setting ()
+  (should (equal '(("set" "ing"))
+                 (org-parser--get-in-buffer-settings '("#+set: ing")))))
+
+(ert-deftest get-in-buffer-settings/three-values-on-one-line ()
+  (should (equal '(("set" "in" "g"))
+                 (org-parser--get-in-buffer-settings '("#+set: in g")))))
+
+(ert-deftest get-in-buffer-settings/two-settings ()
+  (should (equal '(("set" "ing") ("thing" "that"))
+                 (org-parser--get-in-buffer-settings '("#+set: ing" "#+thing: that" "* and how!")))))
+
+(ert-deftest get-in-buffer-settings/one-setting-then-other-stuff ()
+  (should (equal '(("set" "ing"))
+                 (org-parser--get-in-buffer-settings '("#+set: ing" "* and how!")))))
+
+(ert-deftest get-in-buffer-settings/one-setting-then-other-stuff-then-setting ()
+  (should (equal '(("set" "ing") ("another" "thing"))
+                 (org-parser--get-in-buffer-settings '("#+set: ing" "* and how!" "#+another: thing")))))
 
 
 (ert-deftest convert-text-block/simple-text ()
@@ -2081,10 +2162,10 @@
 
 (ert-deftest two-lines-on-second-level/only-one-child ()
   (should (equal 1
-                 (length (gethash :children (first (org-parser-parse-string "* header\n** second level\nwith text")))))))
+                 (length (gethash :children (first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
 
 (ert-deftest two-lines-on-second-level/ ()
   (should (equal 1
-                 (length (gethash :children (first (org-parser-parse-string "* header\n** second level\nwith text")))))))
+                 (length (gethash :children (first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
 
 ;;; tests.el ends here
