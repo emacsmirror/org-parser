@@ -64,6 +64,10 @@
   (should (equal '(("key" . "val"))
                  (gethash :properties (car (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:key: val\n:END:\n")))))))
 
+(ert-deftest parse-string/property-with-colon ()
+  (should (equal '(("thing" . "http://zck.me"))
+                 (gethash :properties (first (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:thing: http://zck.me\n:END:\n")))))))
+
 (ert-deftest parse-string/property-with-leading-spaces-is-stored-separately ()
   (should (equal '(("key" . "val"))
                  (gethash :properties (car (gethash :content (org-parser-parse-string "* header\n  :PROPERTIES:\n   :key: val\n    :END:\n")))))))
@@ -1588,6 +1592,10 @@
   (should (equal '(("set" "ing"))
                  (org-parser--get-in-buffer-settings '("#+set: ing")))))
 
+(ert-deftest get-in-buffer-settings/one-setting-with-colon-in-setting ()
+  (should (equal '(("url" "http://zck.me"))
+                 (org-parser--get-in-buffer-settings '("#+url: http://zck.me")))))
+
 (ert-deftest get-in-buffer-settings/three-values-on-one-line ()
   (should (equal '(("set" "in" "g"))
                  (org-parser--get-in-buffer-settings '("#+set: in g")))))
@@ -1861,6 +1869,10 @@
 (ert-deftest get-properties/single-property ()
   (should (equal '(("clothing" . "pants"))
                  (org-parser--get-properties "* heading\n:PROPERTIES:\n:clothing: pants\n:END:"))))
+
+(ert-deftest get-properties/single-property-with-colon ()
+  (should (equal '(("url" . "http://zck.me"))
+                 (org-parser--get-properties "* heading\n:PROPERTIES:\n:url: http://zck.me\n:END:"))))
 
 (ert-deftest get-properties/single-property-with-many-spaces-between-property-and-value ()
   (should (equal '(("z" . "y"))
