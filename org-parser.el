@@ -85,7 +85,7 @@ no headlines or plain lists in it."
 (defun org-parser--drop-single-empty-string-at-beginning-and-end (string-list)
   "Drop a maximum of one empty string from each of the beginning and end of STRING-LIST."
   (when string-list
-    (subseq string-list
+    (seq-subseq string-list
             (if (equal (cl-first string-list)
                        "")
                 1
