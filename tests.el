@@ -25,7 +25,7 @@
 
 (ert-deftest parse-string/single-line-string-with-one-buffer-setting-check-content ()
   (should (equal '("hi there")
-                 (gethash :text (first (gethash :content (org-parser-parse-string "#+any-props: yes-there-is!\n* hi there")))))))
+                 (gethash :text (cl-first (gethash :content (org-parser-parse-string "#+any-props: yes-there-is!\n* hi there")))))))
 
 (ert-deftest parse-string/three-on-a-line ()
   (should (equal '(("any-props" "yes" "there" "are"))
@@ -66,7 +66,7 @@
 
 (ert-deftest parse-string/property-with-colon ()
   (should (equal '(("thing" . "http://zck.me"))
-                 (gethash :properties (first (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:thing: http://zck.me\n:END:\n")))))))
+                 (gethash :properties (cl-first (gethash :content (org-parser-parse-string "* header\n:PROPERTIES:\n:thing: http://zck.me\n:END:\n")))))))
 
 (ert-deftest parse-string/property-with-leading-spaces-is-stored-separately ()
   (should (equal '(("key" . "val"))
@@ -101,27 +101,27 @@
                  (length (gethash :content (org-parser-parse-string "- header"))))))
 
 (ert-deftest parse-string/single-line-with-link-text-before-link ()
-  (let ((text (gethash :text (first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
+  (let ((text (gethash :text (cl-first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
     (should (listp text))
     (should (equal 2
                    (length text)))
     (should (equal "here is "
-                   (first text)))
-    (should (hash-table-p (second text)))
-    (should (equal :link (gethash :type (second text))))
-    (should (equal "http://zck.me/" (gethash :target (second text))))
-    (should (equal "my site" (gethash :text (second text))))))
+                   (cl-first text)))
+    (should (hash-table-p (cl-second text)))
+    (should (equal :link (gethash :type (cl-second text))))
+    (should (equal "http://zck.me/" (gethash :target (cl-second text))))
+    (should (equal "my site" (gethash :text (cl-second text))))))
 
 (ert-deftest parse-string/single-line-with-link-text-link-text ()
-  (let ((text (gethash :text (first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
+  (let ((text (gethash :text (cl-first (gethash :content (org-parser-parse-string "* here is [[http://zck.me/][my site]]"))))))
     (should (listp text))
     (should (equal 2
                    (length text)))
-    (should (hash-table-p (second text)))
+    (should (hash-table-p (cl-second text)))
     (should (equal "my site"
-                   (gethash :text (second text))))
+                   (gethash :text (cl-second text))))
     (should (equal "http://zck.me/"
-                   (gethash :target (second text))))))
+                   (gethash :target (cl-second text))))))
 
 
 (ert-deftest parse-string/single-plain-list-text ()
@@ -181,8 +181,8 @@
 
     (should (equal 1 (length (gethash :body entire-block))))
 
-    (should (hash-table-p (first (gethash :body entire-block))))
-    (let ((src-block (first (gethash :body entire-block))))
+    (should (hash-table-p (cl-first (gethash :body entire-block))))
+    (let ((src-block (cl-first (gethash :body entire-block))))
       (should (equal :block
                      (gethash :type src-block)))
       (should (equal "SRC"
@@ -195,32 +195,32 @@
 (ert-deftest child-block-single-line-text ()
   (should (equal '("I'm a child!")
                  (gethash :text (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
-                                                                0)))))
+                                                                 0)))))
 
 (ert-deftest child-block-single-line-children ()
   (should-not (gethash :children (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
-                                                                 0))))
+                                                                  0))))
 
 (ert-deftest child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!")))
-                                                                       0)))))
+                                                                        0)))))
 
 
 
 (ert-deftest second-child-block-single-line-text ()
   (should (equal '("I'm the younger, forgotten child.")
                  (gethash :text (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
-                                                                1)))))
+                                                                 1)))))
 
 (ert-deftest second-child-block-single-line-children ()
   (should-not (gethash :children (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
-                                                                 1))))
+                                                                  1))))
 
 (ert-deftest second-child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type (org-parser--get-nested-children (car (gethash :content (org-parser-parse-string "* ignored\n** I'm a child!\n** I'm the younger, forgotten child.")))
-                                                                       1)))))
+                                                                        1)))))
 
 
 
@@ -228,32 +228,32 @@
   (should (equal 2
                  (length (gethash :children
                                   (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
-                                                                       1)
-                                                                  1))))))
+                                                                        1)
+                                                                   1))))))
 
 
 (ert-deftest third-nested-child-block-single-line-text ()
   (should (equal '("this is the other test grandchild.")
                  (gethash :text
                           (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
-                                                               1)
-                                                          1
-                                                          1)))))
+                                                                1)
+                                                           1
+                                                           1)))))
 
 (ert-deftest third-nested-child-block-single-line-children ()
   (should-not (gethash :children
                        (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
-                                                            1)
-                                                       1
-                                                       1))))
+                                                             1)
+                                                        1
+                                                        1))))
 
 (ert-deftest third-nested-child-block-single-line-bullet-type ()
   (should (equal ?*
                  (gethash :bullet-type
                           (org-parser--get-nested-children (elt (gethash :content (org-parser-parse-string "* header\n* second header\n** first child\n*** I'm forgotten about\n** second child\n*** this is the test grandchild\n*** this is the other test grandchild."))
-                                                               1)
-                                                          1
-                                                          1)))))
+                                                                1)
+                                                           1
+                                                           1)))))
 
 
 
@@ -291,10 +291,10 @@
     (should (equal 1
                    (length body)))
     (should (equal 2
-                   (length (first body))))
+                   (length (cl-first body))))
     (should (equal "here's a body with "
-                   (first (first body))))
-    (let ((link-hash (second (first body))))
+                   (cl-first (cl-first body))))
+    (let ((link-hash (cl-second (cl-first body))))
       (should (hash-table-p link-hash))
       (should (equal "http://example.com"
                      (gethash :target link-hash)))
@@ -385,116 +385,116 @@
 (ert-deftest make-bullet/simple-headline ()
   (should (equal "* "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?* :children nil))
-                                         ""
-                                         0))))
+                                          ""
+                                          0))))
 
 (ert-deftest make-bullet/already-nested-headline ()
   (should (equal "** "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?* :children nil))
-                                         "* "
-                                         0))))
+                                          "* "
+                                          0))))
 
 (ert-deftest make-bullet/doubly-nested-headline ()
   (should (equal "*** "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?* :children nil))
-                                         "** "
-                                         0))))
+                                          "** "
+                                          0))))
 
 (ert-deftest make-bullet/simple-plain-list ()
   (should (equal "- "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         ""
-                                         0))))
+                                          ""
+                                          0))))
 
 (ert-deftest make-bullet/plain-list-under-headline ()
   (should (equal "- "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         "* "
-                                         0))))
+                                          "* "
+                                          0))))
 
 (ert-deftest make-bullet/plain-list-under-nested-headline ()
   (should (equal "- "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         "*** "
-                                         0))))
+                                          "*** "
+                                          0))))
 
 (ert-deftest make-bullet/plain-list-under-ordered-list ()
   (should (equal "   - "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         "7. "
-                                         0))))
+                                          "7. "
+                                          0))))
 
 (ert-deftest make-bullet/plain-list-under-long-ordered-list ()
   (should (equal "    - "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         "10. "
-                                         0))))
+                                          "10. "
+                                          0))))
 
 (ert-deftest make-bullet/nested-plain-list ()
   (should (equal "  - "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?- :children nil))
-                                         "- "
-                                         0))))
+                                          "- "
+                                          0))))
 
 (ert-deftest make-bullet/toplevel-ordered-list-period-first-item ()
   (should (equal "1. "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?. :children nil))
-                                         ""
-                                         0))))
+                                          ""
+                                          0))))
 
 (ert-deftest make-bullet/toplevel-ordered-list-paren-first-item ()
   (should (equal "1) "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\) :children nil))
-                                         ""
-                                         0))))
+                                          ""
+                                          0))))
 
 (ert-deftest make-bullet/toplevel-ordered-list-period-second-item ()
   (should (equal "2. "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?. :children nil))
-                                         ""
-                                         1))))
+                                          ""
+                                          1))))
 
 (ert-deftest make-bullet/toplevel-ordered-list-paren-fifth-item ()
   (should (equal "5) "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\) :children nil))
-                                         ""
-                                         4))))
+                                          ""
+                                          4))))
 
 (ert-deftest make-bullet/indented-ordered-list-period-first-item ()
   (should (equal "   1. "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\. :children nil))
-                                         "1) "
-                                         0))))
+                                          "1) "
+                                          0))))
 
 (ert-deftest make-bullet/indented-ordered-list-paren-first-item ()
   (should (equal "   1) "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\) :children nil))
-                                         "7. "
-                                         0))))
+                                          "7. "
+                                          0))))
 
 (ert-deftest make-bullet/indented-ordered-list-period-first-item-under-long-parent ()
   (should (equal "    1. "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?. :children nil))
-                                         "12) "
-                                         0))))
+                                          "12) "
+                                          0))))
 
 (ert-deftest make-bullet/indented-ordered-list-paren-first-item-under-long-parent ()
   (should (equal "    1) "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\) :children nil))
-                                         "79. "
-                                         0))))
+                                          "79. "
+                                          0))))
 
 (ert-deftest make-bullet/indented-ordered-list-period-tenth-item ()
   (should (equal "   10. "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\. :children nil))
-                                         "1) "
-                                         9))))
+                                          "1) "
+                                          9))))
 
 (ert-deftest make-bullet/indented-ordered-list-paren-third-item ()
   (should (equal "   3) "
                  (org-parser--make-bullet #s(hash-table data (:text "whatever" :bullet-type ?\) :children nil))
-                                         "7. "
-                                         2))))
+                                          "7. "
+                                          2))))
 
 
 (ert-deftest nested-whitespace/under-headline ()
@@ -665,8 +665,8 @@
 (ert-deftest single-to-string/headline-and-body ()
   (should (equal "* whatever\nHere's a body\n"
                  (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* whatever\nHere's a body\n")))
-                                              ""
-                                              0))))
+                                               ""
+                                               0))))
 
 (ert-deftest single-to-string/two-nested-headlines ()
   (should (equal "* first\n** second\n"
@@ -689,8 +689,8 @@
 (ert-deftest single-to-string/headline-and-multiline-body ()
   (should (equal "* whatever\nHere's a body\non two lines\n"
                  (org-parser--single-to-string (car (gethash :content (org-parser-parse-string "* whatever\nHere's a body\non two lines")))
-                                              ""
-                                              0))))
+                                               ""
+                                               0))))
 
 
 (ert-deftest in-buffer-settings-to-string/empty ()
@@ -959,16 +959,16 @@
 (ert-deftest format-text/link-list ()
   (should (equal "Hi there this is [[http://example.com][a link]]!"
                  (org-parser--format-text (list "Hi there this is "
-                                               (org-parser--make-link-hash "http://example.com" "a link")
-                                               "!")))))
+                                                (org-parser--make-link-hash "http://example.com" "a link")
+                                                "!")))))
 
 (ert-deftest format-text/multiple-link-list ()
   (should (equal "Hi there this is [[http://example.com][one link]] [[http://zck.me][two links]]!"
                  (org-parser--format-text (list "Hi there this is "
-                                               (org-parser--make-link-hash "http://example.com" "one link")
-                                               " "
-                                               (org-parser--make-link-hash "http://zck.me" "two links")
-                                               "!")))))
+                                                (org-parser--make-link-hash "http://example.com" "one link")
+                                                " "
+                                                (org-parser--make-link-hash "http://zck.me" "two links")
+                                                "!")))))
 
 (ert-deftest format-text-single-item/string ()
   (should (equal "Some text here."
@@ -1009,22 +1009,22 @@
 (ert-deftest format-body/two-lines ()
   (should (equal "I'm a body\nAnd so am I!\n"
                  (org-parser--format-body '(("I'm a body")
-                                           ("And so am I!"))))))
+                                            ("And so am I!"))))))
 
 (ert-deftest format-body/single-line-with-link ()
   (should (equal "I've got [[http://example.com][a link]] inside me!\n"
                  (org-parser--format-body (list (list "I've got "
-                                                     (org-parser--make-link-hash "http://example.com"
-                                                                                "a link")
-                                                     " inside me!"))))))
+                                                      (org-parser--make-link-hash "http://example.com"
+                                                                                  "a link")
+                                                      " inside me!"))))))
 
 (ert-deftest format-body/multiple-lines-with-link ()
   (should (equal "One body line and then:\nI've got [[http://example.com][a link]] inside me!\n"
                  (org-parser--format-body (list (list "One body line and then:")
-                                               (list "I've got "
-                                                     (org-parser--make-link-hash "http://example.com"
-                                                                                "a link")
-                                                     " inside me!"))))))
+                                                (list "I've got "
+                                                      (org-parser--make-link-hash "http://example.com"
+                                                                                  "a link")
+                                                      " inside me!"))))))
 
 (ert-deftest format-body/src-block-only ()
   (should (equal "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC\n"
@@ -1053,16 +1053,16 @@
 (ert-deftest format-body-line/single-link ()
   (should (equal "[[http://example.com][I'm a link]]"
                  (org-parser--format-body-line (list (org-parser--make-link-hash "http://example.com"
-                                                                               "I'm a link"))))))
+                                                                                 "I'm a link"))))))
 
 (ert-deftest format-body-line/strings-and-link ()
   (should (equal "I'm text and [[http://example.com][I'm a link]] and I'm more text and [[http://example.com][I'm another link]]"
                  (org-parser--format-body-line (list "I'm text and "
-                                                    (org-parser--make-link-hash "http://example.com"
-                                                                               "I'm a link")
-                                                    " and I'm more text and "
-                                                    (org-parser--make-link-hash "http://example.com"
-                                                                                "I'm another link"))))))
+                                                     (org-parser--make-link-hash "http://example.com"
+                                                                                 "I'm a link")
+                                                     " and I'm more text and "
+                                                     (org-parser--make-link-hash "http://example.com"
+                                                                                 "I'm another link"))))))
 
 (ert-deftest format-body-line/block-only ()
   (should (equal "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC"
@@ -1083,20 +1083,20 @@
 (ert-deftest nested-children/single-index ()
   (should (equal 3
                  (org-parser--get-nested-children #s(hash-table data (:children (2 3 4)))
-                                                 1))))
+                                                  1))))
 
 (ert-deftest nested-children/missing-index ()
   (should-not (org-parser--get-nested-children #s(hash-table data (:children (2 3 4)))
-                                              14)))
+                                               14)))
 
 (ert-deftest nested-children/too-many-indices ()
   (should-not (org-parser--get-nested-children #s(hash-table data (:children (2 #s(hash-table data (:children nil :text "whatever")) 4)))
-                                              1 1)))
+                                               1 1)))
 
 (ert-deftest nested-children/two-indices ()
   (should (equal :im-nested
                  (org-parser--get-nested-children #s(hash-table data (:children (2 #s(hash-table data (:children (0 1 :im-nested))))))
-                                                 1 2))))
+                                                  1 2))))
 
 
 (ert-deftest bullet-type-headline ()
@@ -1309,46 +1309,46 @@
 (ert-deftest parse-for-markup/only-a-link ()
   (let ((parsed (org-parser--parse-for-markup "[[http://zck.me/][my site]]")))
     (should (equal 1 (length parsed)))
-    (should (hash-table-p (first parsed)))
-    (should (equal :link (gethash :type (first parsed))))
-    (should (equal "http://zck.me/" (gethash :target (first parsed))))
-    (should (equal "my site" (gethash :text (first parsed))))))
+    (should (hash-table-p (cl-first parsed)))
+    (should (equal :link (gethash :type (cl-first parsed))))
+    (should (equal "http://zck.me/" (gethash :target (cl-first parsed))))
+    (should (equal "my site" (gethash :text (cl-first parsed))))))
 
 (ert-deftest parse-for-markup/text-before-link ()
   (let ((parsed (org-parser--parse-for-markup "Here's a link -> [[http://zck.me/][my site]]")))
     (should (equal 2 (length parsed)))
-    (should (equal "Here's a link -> " (first parsed)))
-    (should (hash-table-p (second parsed)))
-    (should (equal :link (gethash :type (second parsed))))
-    (should (equal "http://zck.me/" (gethash :target (second parsed))))
-    (should (equal "my site" (gethash :text (second parsed))))))
+    (should (equal "Here's a link -> " (cl-first parsed)))
+    (should (hash-table-p (cl-second parsed)))
+    (should (equal :link (gethash :type (cl-second parsed))))
+    (should (equal "http://zck.me/" (gethash :target (cl-second parsed))))
+    (should (equal "my site" (gethash :text (cl-second parsed))))))
 
 (ert-deftest parse-for-markup/text-after-link ()
   (let ((parsed (org-parser--parse-for-markup "[[http://zck.me/][my site]] <- there it was")))
     (should (equal 2 (length parsed)))
-    (should (hash-table-p (first parsed)))
-    (should (equal :link (gethash :type (first parsed))))
-    (should (equal "http://zck.me/" (gethash :target (first parsed))))
-    (should (equal "my site" (gethash :text (first parsed))))
-    (should (equal " <- there it was" (second parsed)))))
+    (should (hash-table-p (cl-first parsed)))
+    (should (equal :link (gethash :type (cl-first parsed))))
+    (should (equal "http://zck.me/" (gethash :target (cl-first parsed))))
+    (should (equal "my site" (gethash :text (cl-first parsed))))
+    (should (equal " <- there it was" (cl-second parsed)))))
 
 (ert-deftest parse-for-markup/text-before-and-after-link ()
   (let ((parsed (org-parser--parse-for-markup "Here's a link -> [[http://zck.me/][my site]] <- there it was")))
     (should (equal 3 (length parsed)))
-    (should (equal "Here's a link -> " (first parsed)))
-    (should (hash-table-p (second parsed)))
-    (should (equal :link (gethash :type (second parsed))))
-    (should (equal "http://zck.me/" (gethash :target (second parsed))))
-    (should (equal "my site" (gethash :text (second parsed))))
-    (should (equal " <- there it was" (third parsed)))))
+    (should (equal "Here's a link -> " (cl-first parsed)))
+    (should (hash-table-p (cl-second parsed)))
+    (should (equal :link (gethash :type (cl-second parsed))))
+    (should (equal "http://zck.me/" (gethash :target (cl-second parsed))))
+    (should (equal "my site" (gethash :text (cl-second parsed))))
+    (should (equal " <- there it was" (cl-third parsed)))))
 
 (ert-deftest parse-for-markup/two-links ()
   (let ((parsed (org-parser--parse-for-markup "[[http://zck.me/][my site]][[https://www.gnu.org/software/emacs/][Emacs!]]")))
     (should (equal 2 (length parsed)))
-    (should (equal :link (gethash :type (first parsed))))
-    (should (equal "http://zck.me/" (gethash :target (first parsed))))
-    (should (equal :link (gethash :type (second parsed))))
-    (should (equal "https://www.gnu.org/software/emacs/" (gethash :target (second parsed))))))
+    (should (equal :link (gethash :type (cl-first parsed))))
+    (should (equal "http://zck.me/" (gethash :target (cl-first parsed))))
+    (should (equal :link (gethash :type (cl-second parsed))))
+    (should (equal "https://www.gnu.org/software/emacs/" (gethash :target (cl-second parsed))))))
 
 (ert-deftest parse-for-markup/src-block ()
   (let ((block (org-parser--parse-for-markup "#+BEGIN_SRC sh\n  pants\n  and other things\n#+END_SRC")))
@@ -1669,18 +1669,18 @@
   (should (equal '("nested here!")
                  (gethash :text
                           (org-parser--get-nested-children (org-parser--convert-text-block '("* whatever" ("** nested here!")))
-                                                          0)))))
+                                                           0)))))
 
 (ert-deftest convert-text-block/nested-headline-child-bullet ()
   (should (equal ?*
                  (gethash :bullet-type
                           (org-parser--get-nested-children (org-parser--convert-text-block '("* whatever" ("** nested here!")))
-                                                          0)))))
+                                                           0)))))
 
 (ert-deftest convert-text-block/nested-headline-child-children ()
   (should-not (gethash :children
                        (org-parser--get-nested-children (org-parser--convert-text-block '("* whatever" ("** nested here!")))
-                                                       0))))
+                                                        0))))
 
 (ert-deftest convert-text-block/multiple-nested-children ()
   (should (equal 3
@@ -1727,17 +1727,17 @@
   (let ((gotten-text (org-parser--get-text "* headline [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after")))
     (should (listp gotten-text))
     (should (equal 3 (length gotten-text)))
-    (should (equal "headline " (first gotten-text)))
-    (should (hash-table-p (second gotten-text)))
-    (should (equal " and text after" (third gotten-text)))))
+    (should (equal "headline " (cl-first gotten-text)))
+    (should (hash-table-p (cl-second gotten-text)))
+    (should (equal " and text after" (cl-third gotten-text)))))
 
 (ert-deftest get-text/headline-with-link-and-body ()
   (let ((gotten-text (org-parser--get-text "* headline [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after\nand more stuff")))
     (should (listp gotten-text))
     (should (equal 3 (length gotten-text)))
-    (should (equal "headline " (first gotten-text)))
-    (should (hash-table-p (second gotten-text)))
-    (should (equal " and text after"(third gotten-text)))))
+    (should (equal "headline " (cl-first gotten-text)))
+    (should (hash-table-p (cl-second gotten-text)))
+    (should (equal " and text after"(cl-third gotten-text)))))
 
 
 
@@ -1789,10 +1789,10 @@
     (should (equal 3
                    (length gotten-body)))
     (should (equal '("whatever")
-                   (first gotten-body)))
+                   (cl-first gotten-body)))
 
 
-    (let ((block (second gotten-body)))
+    (let ((block (cl-second gotten-body)))
       (should (hash-table-p block))
       (should (equal :block
                      (gethash :type block)))
@@ -1802,15 +1802,15 @@
                      (gethash :body block))))
 
     (should (equal '("and after")
-                   (third gotten-body)))))
+                   (cl-third gotten-body)))))
 
 (ert-deftest get-body/headline-with-link-in-body ()
   (let ((gotten-text (org-parser--get-body "* headline\nWith a body [[https://bitbucket.org/zck/org-parser.el][with a link]] and text after")))
     (should (listp gotten-text))
     (should (equal 1 (length gotten-text)))
-    (should (stringp (first (first gotten-text))))
-    (should (hash-table-p (second (first gotten-text))))
-    (should (stringp (third (first gotten-text))))))
+    (should (stringp (cl-first (cl-first gotten-text))))
+    (should (hash-table-p (cl-second (cl-first gotten-text))))
+    (should (stringp (cl-third (cl-first gotten-text))))))
 
 (ert-deftest get-body/empty-line-in-body ()
   (should (equal '(("Next is blank!")
@@ -2174,10 +2174,10 @@
 
 (ert-deftest two-lines-on-second-level/only-one-child ()
   (should (equal 1
-                 (length (gethash :children (first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
+                 (length (gethash :children (cl-first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
 
 (ert-deftest two-lines-on-second-level/ ()
   (should (equal 1
-                 (length (gethash :children (first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
+                 (length (gethash :children (cl-first (gethash :content (org-parser-parse-string "* header\n** second level\nwith text"))))))))
 
 ;;; tests.el ends here

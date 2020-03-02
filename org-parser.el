@@ -51,9 +51,9 @@
 ;;;###autoload
 (defun org-parser-parse-string (string)
   "Parse STRING into a list of structure items."
-  (destructuring-bind (settings content) (-split-with (lambda (ele) (string-prefix-p "#+" ele))
-                                                      (split-string (string-remove-suffix "\n" (substring-no-properties string))
-                                                                    "\n"))
+  (cl-destructuring-bind (settings content) (-split-with (lambda (ele) (string-prefix-p "#+" ele))
+                                                         (split-string (string-remove-suffix "\n" (substring-no-properties string))
+                                                                       "\n"))
     (ht (:in-buffer-settings (org-parser--get-in-buffer-settings settings))
         (:content (org-parser--convert-text-tree (org-parser--make-text-tree (org-parser--split-into-blocks content)))))))
 
@@ -86,21 +86,21 @@ no headlines or plain lists in it."
   "Drop a maximum of one empty string from each of the beginning and end of STRING-LIST."
   (when string-list
     (seq-subseq string-list
-            (if (equal (cl-first string-list)
-                       "")
-                1
-              0)
-            (if (equal (-last-item string-list)
-                       "")
-                (1- (length string-list))
-              (length string-list)))))
+                (if (equal (cl-first string-list)
+                           "")
+                    1
+                  0)
+                (if (equal (-last-item string-list)
+                           "")
+                    (1- (length string-list))
+                  (length string-list)))))
 
 (defun org-parser--get-in-buffer-settings (lines)
   "Get the buffer settings out of the initial lines of LINES.
 
 In-buffer settings are described at http://orgmode.org/manual/In_002dbuffer-settings.html#In_002dbuffer-settings"
   (when lines
-    (destructuring-bind (first . rest) lines
+    (cl-destructuring-bind (first . rest) lines
       (if (string-match "#\\+\\([[:graph:]]+\\):\\(.*\\)" first)
           (cons (cons (match-string 1 first)
                       (split-string (match-string 2 first)))
@@ -257,10 +257,10 @@ TEXT should have both the beginning #+BEGIN_whatever and the ending
 #+END_whatever lines."
   (let ((block (make-hash-table)))
     (when (string-match "^#\\+BEGIN_\\(\\w+\\) ?\\([^\n]*\\)\n\\(.*\\(\n.*\\)*\\)\n#\\+END_\\1\n?$" text)
-     (puthash :type :block block)
-     (puthash :block-type (match-string 1 text) block)
-     (puthash :arguments (match-string 2 text) block)
-     (puthash :body (match-string 3 text) block))
+      (puthash :type :block block)
+      (puthash :block-type (match-string 1 text) block)
+      (puthash :arguments (match-string 2 text) block)
+      (puthash :body (match-string 3 text) block))
     block))
 
 (defun org-parser--get-text (text)
@@ -308,8 +308,8 @@ Normally this is just on newlines, but blocks are multiline."
       (let ((cur-line (pop lines)))
         (when (or (string-prefix-p "#+BEGIN_" cur-line t)
                   (string-prefix-p "#+NAME: " cur-line t))
-          (destructuring-bind (rest-of-block post-block-body-text) (-split-with (lambda (line) (not (string-prefix-p "#+END_" line)))
-                                                                              lines)
+          (cl-destructuring-bind (rest-of-block post-block-body-text) (-split-with (lambda (line) (not (string-prefix-p "#+END_" line)))
+                                                                                   lines)
             (setq cur-line (concat cur-line "\n" (string-join rest-of-block "\n")))
             (setq lines post-block-body-text)
             (when (string-prefix-p "#+END_" (car lines))
@@ -341,10 +341,10 @@ The tags are returned as a list of strings.  The org manual says tags
 consist of \"letters, numbers, ‘_’, and ‘@’.\""
   (let ((first-line (car (split-string text "\n"))))
     (-some--> first-line
-              (string-match "[ \t]+\\(\\(?::[[:alnum:]@_]+\\)+\\):$"
-                            it)
-              (match-string 1 first-line)
-              (split-string it ":" t))))
+      (string-match "[ \t]+\\(\\(?::[[:alnum:]@_]+\\)+\\):$"
+                    it)
+      (match-string 1 first-line)
+      (split-string it ":" t))))
 
 (defun org-parser--extract-property-text (text)
   "Extract the property text from TEXT.
@@ -494,8 +494,8 @@ structure."
   "Convert the IN-BUFFER-PROPERTIES-LIST to a string."
   (string-join (mapcar (lambda (property)
                          (format "#+%s: %s"
-                                 (first property)
-                                 (string-join (rest property) " ")))
+                                 (cl-first property)
+                                 (string-join (cl-rest property) " ")))
                        in-buffer-properties-list)
                "\n"))
 
@@ -542,8 +542,8 @@ SIBLINGS-BEFORE-THIS-ONE is the count of older siblings with the same parent."
 This can't calculate FORMATTED-BULLETS because we don't pass in
 enough information to know how much to indent STRUCTURE."
   (let ((pre-tags (format "%s%s"
-                         formatted-bullets
-                         (org-parser--format-text (gethash :text structure))))
+                          formatted-bullets
+                          (org-parser--format-text (gethash :text structure))))
         (tags (string-join (gethash :tags structure)
                            ":")))
     (if (string-empty-p tags)
@@ -609,7 +609,7 @@ Each element of BODY-LIST should be a list itself."
   (cond ((stringp structure-item)
          structure-item)
         ((hash-table-p structure-item)
-         (case (gethash :type structure-item)
+         (cl-case (gethash :type structure-item)
            (:link (format "[[%s][%s]]"
                           (gethash :target structure-item)
                           (gethash :text structure-item)))
