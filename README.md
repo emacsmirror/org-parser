@@ -1,6 +1,8 @@
-# org-parser.el
+# Org Parser
 
 This project parses org files into structured datatypes.
+
+It has a [bug tracker](https://todo.sr.ht/~zck/org-parser).
 
 ## Entry points
 
@@ -69,9 +71,9 @@ Link text items have the following keys:
 
 For example, this org link:
 
-    [[http://bitbucket.org/zck/org-parser.el][the org parser repository]]
+    [[https://hg.sr.ht/~zck/org-parser][the org parser repository]]
 
-Results in a hash table with `:target` `"http://bitbucket.org/zck/org-parser.el"` and `:text` `"the org parser repository"`.
+Results in a hash table with `:target` `"https://hg.sr.ht/~zck/org-parser"` and `:text` `"the org parser repository"`.
 
 ## Release History
 
