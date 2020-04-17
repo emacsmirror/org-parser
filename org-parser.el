@@ -20,12 +20,17 @@
 
 
 ;; Keywords: files, outlines, tools
-;; Homepage: https://bitbucket.org/zck/org-parser.el
+;; Homepage: https://hg.sr.ht/~zck/org-parser
 
 
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (ht "2.1"))
 
 ;;; Commentary:
+
+;; This library parses org files into structured datatypes.
+;; Its repository is https://hg.sr.ht/~zck/org-parser
+
+;; In its simplest use, call #'org-parser-parse-buffer with the name of an org buffer.
 
 ;;; Code:
 
